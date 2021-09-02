@@ -1,5 +1,5 @@
-const serverURL_products = 'http://localhost:3000';
-const serverURL_cart = 'http://localhost:3000';
+const serverURL_products = 'https://enki-shopping-cart.herokuapp.com/';
+const serverURL_cart = 'https://enki-shopping-cart.herokuapp.com/';
 const serverURL_user = '';
 
 window.addEventListener('DOMContentLoaded', (event) => {
