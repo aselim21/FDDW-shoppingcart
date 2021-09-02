@@ -5,6 +5,7 @@ const cookieSession = require('cookie-session');
 const session =require('express-session');
 var path = require('path');
 const app = express();
+app.use(express.static("src"));
 const MongodbURI = "mongodb+srv://enki-admin-cart:enki1234@cluster0.5xz0p.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
 const mongoClient = new MongoClient(MongodbURI);
 const db_enki_carts = 'enki-carts';
