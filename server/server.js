@@ -53,70 +53,21 @@ app.get('/', validateCookie, (req, res) => {
 });
 
 app.get('/cart', (req, res) => {
-    //res.cookie('session_id', '123456');
     res.status(200).json({msg : 'welcome to cart'});
     const {cookies} = req ;
     console.log(cookies);
 
-    //console.log(req.body);
+  
 });
 
-// // need cookieParser middleware before we can do anything with cookies
 
-// app.use(cookieParser());
-
-// // set a cookie
-// app.use(function (req, res, next) {
-//   // check if client sent cookie
-//   var cookie = req.cookies.cookieName;
-//   if (cookie === undefined) {
-//     // no: set a new cookie
-//     var randomNumber=Math.random().toString();
-//     randomNumber=randomNumber.substring(2,randomNumber.length);
-//     res.cookie('cookieName',randomNumber, { maxAge: 900000, httpOnly: true });
-//     console.log('cookie created successfully');
-//   } else {
-//     // yes, cookie was already present 
-//     console.log('cookie exists', cookie);
-//   } 
-//   next(); // <-- important!
-// });
-
-// app.use(express.static(__dirname + '/public'));
 
 app.post('/cart', (req, res, next) => {
     // //generate random cookie?
     console.log(req.body);
-    // //Cookies
-    // // Expires => If unspecified, the cookie becomes a session cookie (new Date()).toUTCString()
-    // //
-    // res.cookie('cookieName','5', { maxAge: 900000, httpOnly: true })
- //res.cookie(`cart-id`,`random cookie`);
- 
-    // next();
-//session cookie
-//res.setHeader("set-cookie", ["test = test"]);
-  //beautiful way to prevent failures
-  //res.sendFile(`${__dirname}/index.html`);
+   
 });
-//a middleware- for every request of the server
-// app.use(session({
-//     secret:'key that will sign cookie',
-//     //create new cookie for every request, doesnt matter if its the same user or browser
-//     resave:false,
-//     //if we dont touch the sesssion we dont want to save
-//     //we can connect MongoDB to save the cookies
-//     saveUninitialized:false
-// }))
 
-// app.use(session({
-//     secret:'key that will sign cookie',
-//     //create new cookie for every request, doesnt matter if its the same user or browser
-//     resave:false,
-//     //if we dont touch the sesssion we dont want to save
-//     //we can connect MongoDB to save the cookies
-//     saveUninitialized:false
-// }))
 function setCookie(name, value, days) {
     return name + "=" + value + ";path=/;SameSite=None;Secure;Max-Age=" + 86400*days  ;
 }
@@ -147,15 +98,9 @@ app.put('/cart',validateCookie, (req, res) => {
         }
         console.log(data);
         //TODO save tha data in DB
-        // res.writeHead(200, {
-        //     'Set-Cookie': `cart_id=${randomNumber}`
-        //   });
+ 
         res.setHeader('Set-Cookie',setCookie('cart_id',randomNumber,5));
-        //res.setHeader('Set-Cookie',`cart_id=${randomNumber}; `);
-        //res.cookie('cart_id', randomNumber);
-        //res.cookie('cart_id' ,randomNumber, { sameSite: 'none', secure : true});
-        res.status(200).send(randomNumber);
-        //res.send(null);
+        res.status(200).send();
         cart_ids.push(randomNumber);
         console.log(cart_ids);
     }

@@ -38,7 +38,6 @@ function renderTemplate(the_url, the_template, the_target) {
             quantity: formQuantity.quantity
         }
         const jsondata = JSON.stringify(data);
-        //+ the number
       await PUTInfoTo(`${serverURL_cart}/cart`,jsondata)
     console.log(jsondata);
 
@@ -90,60 +89,12 @@ async function PUTInfoTo(serverURL_Endpoint, data) {
     xhttp.setRequestHeader("Accept", "application/json");
     xhttp.setRequestHeader("Content-Type", "application/json");
     xhttp.setRequestHeader("Access-Control-Allow-Credentials", "true");
-    console.log(document.cookie);
-    // xhttp.setRequestHeader('Set-Cookie', `cart_id=${getCookie('cart_id')}`);
-    // xhttp.setRequestHeader('Set-Cookie', `cart_id=${getCookie('cart_id')}`);
-    // [`cart_id=${getCookie('cart_id')}`]
     xhttp.send(data);
-
-    console.log(getCookie('cart_id'));//null
-    //return xhttp;
     xhttp.onreadystatechange = (e) => {
         console.log(e);
         if (xhttp.readyState === XMLHttpRequest.DONE) {
             console.log("xhttp");
             console.log(xhttp);
-            //document.cookie = 'cart_id' + "=" + xhttp.responseText + ";path=/;SameSite=None;Secure;expires=" +  "Thu, 02-Sep-2021 13:00:00 GMT";
-            //setCookie('cart_id', xhttp.responseText, 1);";SameSite=None;Secure"
         }      
     }
-}
-//   // create ajax request with jquery
-//   $.ajax({
-//     contentType: 'application/json',
-//     data: JSON.stringify({
-//       salutation: salutation,
-//       firstName: firstName,
-//       street: street,
-//       houseNumber: houseNumber,
-//       postalCode: postalCode,
-//       city: city,
-//       email: email,
-//       telephone: telephone,
-//       amount: amount,
-//       event_id: event_id
-//     }),
-//     dataType: 'json',
-//     xhrFields: {
-//       withCredentials: true
-//     },
-//     success: function (data) {
-//       console.log('success');
-//     },
-//     error: function (data) {
-//       console.log('error');
-//     },
-//     processData: false,
-//     type: 'POST',
-//     url: url + 'booking'
-//   });
-
-
-// helper function from https://plainjs.com/javascript/utilities/set-cookie-get-cookie-and-delete-cookie-5/   d.toDateString()
-
-function setCookie(name, value, days) {
-    let d = new Date;
-    d.setTime(d.getTime() + 24*60*60*1000*days);
-    document.cookie = name + "=" + value + ";path=/;SameSite=None;Secure;expires=" +  "Thu, 02-Sep-2021 13:00:00 GMT" ;
-    console.log(d.toDateString());
 }
