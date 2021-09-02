@@ -1,5 +1,5 @@
-const serverURL_products = 'https://enki-cart.herokuapp.com/';
-const serverURL_cart = 'https://enki-cart.herokuapp.com/';
+const serverURL_products = 'https://enki-cart.herokuapp.com';
+const serverURL_cart = 'https://enki-cart.herokuapp.com';
 const serverURL_user = '';
 //https://enki.vercel.app ----- http://127.0.0.1:3000------https://git.heroku.com/enki-shopping-cart.git
 
