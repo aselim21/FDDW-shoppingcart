@@ -8,17 +8,20 @@
 </head>
 <body>
     <h2>Your shopping cart</h2>
-    {# <script>
+    
+    <script>
         window.addEventListener('DOMContentLoaded', (event) => {
+            const serverURL= "https://enki-cart.herokuapp.com";
     console.log('DOM fully loaded and parsed');
     const xhttp = new XMLHttpRequest();
-    xhttp.open("GET", 'http://localhost:3000/cart');
+    xhttp.open("GET", serverURL+'/database-cart-products');
     xhttp.send();
     console.log(document.cookie)
  
 });
 
-    </script> #}
+    </script>
+    
     
  
     

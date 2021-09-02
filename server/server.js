@@ -59,6 +59,9 @@ app.get('/', (req, res) => {
 app.get('/home', (req, res) => {
     res.sendFile(path.join(__dirname, '../src', 'index.html'));
 });
+app.get('/products', (req, res) => {
+    res.sendFile(path.join(__dirname, '../src', 'products.html'));
+});
 
 
 app.get('/cart', (req, res) => {
@@ -121,7 +124,7 @@ app.put('/cart',validateCookie, (req, res) => {
 });
 
 //SERVER - Products
-app.get('/products', (req, res) => {
+app.get('/database-products', (req, res) => {
     db_connectAndDo(db_findAll, false, db_collection_products, db_enki_products, false)
         .then((results) => {
             let data = {"book_results": results}
@@ -129,17 +132,17 @@ app.get('/products', (req, res) => {
             console.log(data);
         });
 });
-app.get('/products/:genre', (req, res) => {
-    console.log(req.params.genre);
-    db_connectAndDo(db_findGenre, req.params.genre, db_collection_products, db_enki_products, false)
-        .then((results) => {
-            //let data = {"book_results": results}
-            res.json({book_results : results})
-            //res.send(data);
-            console.log(data);
-        });
+// app.get('/products/:genre', (req, res) => {
+//     console.log(req.params.genre);
+//     db_connectAndDo(db_findGenre, req.params.genre, db_collection_products, db_enki_products, false)
+//         .then((results) => {
+//             //let data = {"book_results": results}
+//             res.json({book_results : results})
+//             //res.send(data);
+//             console.log(data);
+//         });
 
-});
+// });
 
 async function db_connectAndDo(todo, data, the_collection, the_db, filter) {
     try {

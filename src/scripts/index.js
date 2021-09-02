@@ -6,7 +6,7 @@ const serverURL_user = '';
 window.addEventListener('DOMContentLoaded', (event) => {
     console.log('DOM fully loaded and parsed');
 
-    renderTemplate(`${serverURL_products}/products`,'./templates/products.mustache', 'target_products')
+    renderTemplate(`${serverURL_products}/database-products`,'./templates/products.mustache', 'target_products')
         operate_addToCartButton();
  
 });
@@ -27,7 +27,6 @@ function renderTemplate(the_url, the_template, the_target) {
         });
     }
 }
-
  function operate_addToCartButton(){
     $(document).on("click","[data-js-cart]", async function(ev){
         const pressedButton = ev.currentTarget;
