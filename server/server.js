@@ -27,7 +27,7 @@ app.set('trust proxy', 1) // trust first proxy
 app.use(express.json());
 app.use(cookieParser());
 app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', 'http://127.0.0.1:5500');
+    res.header('Access-Control-Allow-Origin', 'https://enki-cart.herokuapp.com/');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Credentials, Cookie, Set-Cookie');
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DEL, OPTION, HEAD');
@@ -47,9 +47,25 @@ function validateCookie(req,res,next){
     console.log(cookies);
     next();
 }
-app.get('/', validateCookie, (req, res) => {
-    //res.cookie('session_id', '123456');
-    //res.status(200).json({msg : 'Loggedin'});
+// app.get('/', validateCookie, (req, res) => {
+//     //res.cookie('session_id', '123456');
+//     //res.status(200).json({msg : 'Loggedin'});
+// });
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../src', 'index.html'));
+});
+app.get('/home', (req, res) => {
+    res.sendFile(path.join(__dirname, '../src', 'index.html'));
+});
+app.get('/products', (req, res) => {
+    res.sendFile(path.join(__dirname, '../src', 'index.html'));
+});
+app.get('/cart', (req, res) => {
+    res.status(200).json({msg : 'welcome to cart'});
+    const {cookies} = req ;
+    console.log(cookies);
+
+  
 });
 
 app.get('/cart', (req, res) => {

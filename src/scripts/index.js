@@ -1,5 +1,5 @@
-const serverURL_products = 'http://127.0.0.1:3000';
-const serverURL_cart = 'http://127.0.0.1:3000';
+const serverURL_products = 'https://enki-cart.herokuapp.com/';
+const serverURL_cart = 'https://enki-cart.herokuapp.com/';
 const serverURL_user = '';
 //https://enki.vercel.app ----- http://127.0.0.1:3000------https://git.heroku.com/enki-shopping-cart.git
 
@@ -15,6 +15,7 @@ function renderTemplate(the_url, the_template, the_target) {
     const xhttp = new XMLHttpRequest();
     xhttp.open("GET", the_url);
     xhttp.send();
+
 
     xhttp.onreadystatechange = (e) => {
         
