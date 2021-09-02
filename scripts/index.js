@@ -1,6 +1,7 @@
-const serverURL_products = 'https://enki.vercel.app';
-const serverURL_cart = 'https://enki.vercel.app';
+const serverURL_products = 'http://127.0.0.1:3000';
+const serverURL_cart = 'http://127.0.0.1:3000';
 const serverURL_user = '';
+//https://enki.vercel.app
 
 window.addEventListener('DOMContentLoaded', (event) => {
     console.log('DOM fully loaded and parsed');
@@ -13,11 +14,14 @@ window.addEventListener('DOMContentLoaded', (event) => {
 function renderTemplate(the_url, the_template, the_target) {
     const xhttp = new XMLHttpRequest();
     xhttp.open("GET", the_url);
-    xhttp.send("{}");
+    xhttp.send();
 
     xhttp.onreadystatechange = (e) => {
+        
         fetch(the_template).then((response) => response.text()).then((template) => {
+            console.log(xhttp.responseText);
             const obj = JSON.parse(xhttp.responseText);
+            console.log(obj);
             console.log(template);
             const rendered = Mustache.render(template, obj);
             document.getElementById(the_target).innerHTML = rendered;

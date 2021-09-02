@@ -27,7 +27,7 @@ app.set('trust proxy', 1) // trust first proxy
 app.use(express.json());
 app.use(cookieParser());
 app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', 'https://enki.vercel.app');
+    res.header('Access-Control-Allow-Origin', 'http://127.0.0.1:5500');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Credentials, Cookie, Set-Cookie');
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DEL, OPTION, HEAD');
@@ -175,8 +175,9 @@ app.get('/products/:genre', (req, res) => {
     console.log(req.params.genre);
     db_connectAndDo(db_findGenre, req.params.genre, db_collection_products, db_enki_products, false)
         .then((results) => {
-            let data = {"book_results": results}
-            res.send(data);
+            //let data = {"book_results": results}
+            res.json({book_results : results})
+            //res.send(data);
             console.log(data);
         });
 
