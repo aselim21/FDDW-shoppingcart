@@ -2,7 +2,7 @@
   "name": "fddw-shoppingcart",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.js",
   "dependencies": {
     "cookie-parser": "^1.4.5",
     "cookie-session": "^1.4.0",
