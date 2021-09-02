@@ -1,7 +1,7 @@
-const serverURL_products = 'http://127.0.0.1:3000';
-const serverURL_cart = 'http://127.0.0.1:3000';
+const serverURL_products = 'https://enki.vercel.app';
+const serverURL_cart = 'https://enki.vercel.app';
 const serverURL_user = '';
-//https://enki.vercel.app
+//https://enki.vercel.app ----- http://127.0.0.1:3000
 
 window.addEventListener('DOMContentLoaded', (event) => {
     console.log('DOM fully loaded and parsed');
