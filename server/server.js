@@ -27,7 +27,7 @@ app.set('trust proxy', 1) // trust first proxy
 app.use(express.json());
 app.use(cookieParser());
 app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', 'https://enki.vercel.app');
+    res.header('Access-Control-Allow-Origin', 'http://127.0.0.1:5500');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Credentials, Cookie, Set-Cookie');
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DEL, OPTION, HEAD');
@@ -117,6 +117,9 @@ app.post('/cart', (req, res, next) => {
 //     //we can connect MongoDB to save the cookies
 //     saveUninitialized:false
 // }))
+function setCookie(name, value, days) {
+    return name + "=" + value + ";path=/;SameSite=None;Secure;Max-Age=" + 86400*days  ;
+}
 
 app.put('/cart',validateCookie, (req, res) => {
     //1. Validate if there is a cookie
@@ -147,7 +150,7 @@ app.put('/cart',validateCookie, (req, res) => {
         // res.writeHead(200, {
         //     'Set-Cookie': `cart_id=${randomNumber}`
         //   });
-        res.setHeader('Set-Cookie',`cart_id=${randomNumber}; Max-Age=10; SameSite=None; Secure`);
+        res.setHeader('Set-Cookie',setCookie('cart_id',randomNumber,5));
         //res.setHeader('Set-Cookie',`cart_id=${randomNumber}; `);
         //res.cookie('cart_id', randomNumber);
         //res.cookie('cart_id' ,randomNumber, { sameSite: 'none', secure : true});
