@@ -13,7 +13,7 @@ window.addEventListener('DOMContentLoaded', (event) => {
 function renderTemplate(the_url, the_template, the_target) {
     const xhttp = new XMLHttpRequest();
     xhttp.open("GET", the_url);
-    xhttp.send();
+    xhttp.send("{}");
 
     xhttp.onreadystatechange = (e) => {
         fetch(the_template).then((response) => response.text()).then((template) => {
