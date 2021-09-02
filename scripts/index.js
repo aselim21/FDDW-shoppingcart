@@ -1,5 +1,5 @@
-const serverURL_products = 'https://fddw-shoppingcart.vercel.app/';
-const serverURL_cart = 'https://fddw-shoppingcart.vercel.app/';
+const serverURL_products = 'https://fddw-shoppingcart.vercel.app';
+const serverURL_cart = 'https://fddw-shoppingcart.vercel.app';
 const serverURL_user = '';
 
 window.addEventListener('DOMContentLoaded', (event) => {
