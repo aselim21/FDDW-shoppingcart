@@ -1,5 +1,5 @@
-const serverURL_products = 'fddw-shoppingcart-aselim21.vercel.app';
-const serverURL_cart = 'fddw-shoppingcart-aselim21.vercel.app';
+const serverURL_products = '';
+const serverURL_cart = '';
 const serverURL_user = '';
 //https://enki.vercel.app ----- http://127.0.0.1:3000
 
