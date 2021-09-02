@@ -13,28 +13,52 @@ const db_collection_carts = 'carts';
 const db_collection_products = 'products';
 const db_collecrion_users = 'users';
 
+//TODO! Load all cart ids here in the beginning!
+let cart_ids = [];
+
 //Cookies
 app.set('trust proxy', 1) // trust first proxy
  
-app.use(cookieSession({
-  name: 'session',
-  keys: ['key1', 'key2']
-}))
+// app.use(cookieSession({
+//   name: 'session',
+//   keys: ['key1', 'key2']
+// }))
 
 app.use(express.json());
 app.use(cookieParser());
 app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    res.header('Access-Control-Allow-Origin', 'http://127.0.0.1:5500');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Credentials, Cookie, Set-Cookie');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DEL, OPTION, HEAD');
+    //res.header('Access-Control-Request-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Credentials ');
+    
     next();
 });
-app.get('/', (req, res) => {
+// app.use((err, req, res, next) => {
+//     res.locals.error = err;
+//     const status = err.status || 500;
+//     res.status(status);
+//     res.render('error');
+//   });
 
+function validateCookie(req,res,next){
+    const {cookies} = req ;
+    console.log(cookies);
+    next();
+}
+app.get('/', validateCookie, (req, res) => {
+    //res.cookie('session_id', '123456');
+    //res.status(200).json({msg : 'Loggedin'});
 });
 
 app.get('/cart', (req, res) => {
+    //res.cookie('session_id', '123456');
+    res.status(200).json({msg : 'welcome to cart'});
+    const {cookies} = req ;
+    console.log(cookies);
 
-    console.log(req.body);
+    //console.log(req.body);
 });
 
 // // need cookieParser middleware before we can do anything with cookies
@@ -67,25 +91,74 @@ app.post('/cart', (req, res, next) => {
     // // Expires => If unspecified, the cookie becomes a session cookie (new Date()).toUTCString()
     // //
     // res.cookie('cookieName','5', { maxAge: 900000, httpOnly: true })
-    // // res.cookie(`cart-id`,`random cookie`);
+ //res.cookie(`cart-id`,`random cookie`);
  
     // next();
 //session cookie
-res.setHeader("set-cookie", ["test = test"]);
+//res.setHeader("set-cookie", ["test = test"]);
   //beautiful way to prevent failures
-  res.sendFile(`${__dirname}/index.html`);
+  //res.sendFile(`${__dirname}/index.html`);
 });
 //a middleware- for every request of the server
-app.use(session({
-    secret:'key that will sign cookie',
-    //create new cookie for every request, doesnt matter if its the same user or browser
-    resave:false,
-    //if we dont touch the sesssion we dont want to save
-    //we can connect MongoDB to save the cookies
-    saveUninitialized:false
-}))
+// app.use(session({
+//     secret:'key that will sign cookie',
+//     //create new cookie for every request, doesnt matter if its the same user or browser
+//     resave:false,
+//     //if we dont touch the sesssion we dont want to save
+//     //we can connect MongoDB to save the cookies
+//     saveUninitialized:false
+// }))
 
-app.put('/cart', (req, res) => {
+// app.use(session({
+//     secret:'key that will sign cookie',
+//     //create new cookie for every request, doesnt matter if its the same user or browser
+//     resave:false,
+//     //if we dont touch the sesssion we dont want to save
+//     //we can connect MongoDB to save the cookies
+//     saveUninitialized:false
+// }))
+
+app.put('/cart',validateCookie, (req, res) => {
+    //1. Validate if there is a cookie
+    const {cookies} = req ;
+    console.log(req.cookies);
+
+    if('cart_id' in cookies){
+        //find it from the db and actualize it
+        console.log('Cookie found');
+        console.log(cookies.cart_id);
+        //db function to update an existing cart
+    }else{
+        let randomNumber = Math.random().toString();
+        randomNumber = randomNumber.substring(2,randomNumber.length);
+        while(randomNumber in cart_ids){
+            //make sure carts don't get the same id
+            randomNumber = Math.random().toString();
+            randomNumber = randomNumber.substring(2,randomNumber.length);
+        }
+        data = {
+            'cart_id': randomNumber,
+            'products': [
+                [req.body.bookId, req.body.quantity]
+            ]
+        }
+        console.log(data);
+        //TODO save tha data in DB
+        // res.writeHead(200, {
+        //     'Set-Cookie': `cart_id=${randomNumber}`
+        //   });
+        res.setHeader('Set-Cookie',`cart_id=${randomNumber}; Max-Age=10; SameSite=None; Secure`);
+        //res.setHeader('Set-Cookie',`cart_id=${randomNumber}; `);
+        //res.cookie('cart_id', randomNumber);
+        //res.cookie('cart_id' ,randomNumber, { sameSite: 'none', secure : true});
+        res.status(200).send(randomNumber);
+        //res.send(null);
+        cart_ids.push(randomNumber);
+        console.log(cart_ids);
+    }
+    //if there is, update this one
+    //if not create a new one with the product
+
 
 });
 
@@ -179,6 +252,9 @@ async function db_findAll(the_collection, the_db) {
         console.log(`No listings found `);
         return 0;
     }
+}
+async function db_findCart(the_collection, the_db){
+    const cursor = await mongoClient.db(the_db).collection(the_collection).findOne('');
 }
 
 const port = process.env.PORT || 3000;

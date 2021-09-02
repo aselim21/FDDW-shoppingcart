@@ -8,6 +8,17 @@
 </head>
 <body>
     <h2>Your shopping cart</h2>
+    <script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+    console.log('DOM fully loaded and parsed');
+    const xhttp = new XMLHttpRequest();
+    xhttp.open("GET", 'http://localhost:3000/cart');
+    xhttp.send();
+    console.log(document.cookie)
+ 
+});
+
+    </script>
     
  
     
