@@ -19,6 +19,10 @@
     "type": "git",
     "url": "git+https://github.com/aselim21/FDDW-shoppingcart.git"
   },
+  "keywords": [
+    "example",
+    "heroku"
+  ],
   "author": "",
   "license": "ISC",
   "bugs": {
