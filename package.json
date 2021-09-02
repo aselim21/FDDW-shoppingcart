@@ -28,5 +28,8 @@
   "bugs": {
     "url": "https://github.com/aselim21/FDDW-shoppingcart/issues"
   },
+  "engines": {
+    "node": "14.x"
+  },
   "homepage": "https://github.com/aselim21/FDDW-shoppingcart#readme"
 }
