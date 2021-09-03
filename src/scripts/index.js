@@ -1,5 +1,5 @@
-const serverURL_products = 'http://127.0.0.1:3000';
-const serverURL_cart = 'http://127.0.0.1:3000';
+const serverURL_products = 'https://enki-cart.herokuapp.com';
+const serverURL_cart = 'https://enki-cart.herokuapp.com';
 const serverURL_user = '';
 //https://enki-cart.herokuapp.com --- http://127.0.0.1:3000
 

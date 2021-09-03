@@ -18,9 +18,6 @@ const db_collecrion_users = 'users';
 //TODO! Load all cart ids here in the beginning!
 let cart_ids = db_connectAndDo(db_getAllCartIDs);
 
-
-
-
 //Cookies
 app.set('trust proxy', 1) // trust first proxy
 
@@ -33,7 +30,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use((req, res, next) => {
     //https://enki-cart.herokuapp.com ------ http://127.0.0.1:5500 ---
-    res.header('Access-Control-Allow-Origin', ' http://127.0.0.1:5500');
+    res.header('Access-Control-Allow-Origin', ' https://enki-cart.herokuapp.com');
     //res.header('Access-Control-Allow-Origin', 'http://127.0.0.1:3000');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Credentials, Cookie, Set-Cookie');
     res.header('Access-Control-Allow-Credentials', 'true');
