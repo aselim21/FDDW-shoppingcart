@@ -9,7 +9,7 @@
             </div>
             <form {{_id}} >
                 <label for="quantity">Quantity: </label>
-                <input type="number" id="quantity" name="quantity">
+                <input type="number" id="quantity" name="quantity" min="1" max={{available}}>
                 <button data-js-cart onclick="return false;" data-js-product-id="{{_id}}">Add to cart</button>
             </form>
-            {{/book_results}}
+{{/book_results}}
