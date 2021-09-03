@@ -1,13 +1,13 @@
-const serverURL_products = 'https://enki-cart.herokuapp.com';
-const serverURL_cart = 'https://enki-cart.herokuapp.com';
+const serverURL_products = 'http://127.0.0.1:3000';
+const serverURL_cart = 'http://127.0.0.1:3000';
 const serverURL_user = '';
-//https://enki.vercel.app ----- http://127.0.0.1:3000------https://git.heroku.com/enki-shopping-cart.git
+//https://enki-cart.herokuapp.com --- http://127.0.0.1:3000
 
 window.addEventListener('DOMContentLoaded', (event) => {
     console.log('DOM fully loaded and parsed');
 
-    renderTemplate(`${serverURL_products}/database-products`,'./templates/products.mustache', 'target_products')
-        operate_addToCartButton();
+    renderTemplate(`${serverURL_products}/products`,'./templates/products.mustache', 'target_products');
+    operate_addToCartButton();
  
 });
 
@@ -15,7 +15,6 @@ function renderTemplate(the_url, the_template, the_target) {
     const xhttp = new XMLHttpRequest();
     xhttp.open("GET", the_url);
     xhttp.send();
-
 
     xhttp.onreadystatechange = (e) => {
         
