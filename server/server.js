@@ -273,11 +273,9 @@ async function db_findGenre(the_collection, the_db, the_genre) {
     }
 }
 async function db_findBookId(the_collection, the_db, the_id) {
-    const cursor = await mongoClient.db(the_db).collection(the_collection).find({ _id: ObjectId(the_id) });
-    const result = await cursor.toArray();
- 
+    const result = await mongoClient.db(the_db).collection(the_collection).findOne({ _id: ObjectId(the_id) });
     console.log(result)
-    if (result.length > 0) {
+    if (result) {
         console.log(`Found a listing in the collection with the id '${the_id}':`);
         return result;
     } else {
