@@ -155,9 +155,9 @@ app.get('/products/:id', (req, res) => {
     console.log(book_id);
     db_connectAndDo(db_findBookId, false, db_collection_products, db_enki_products, book_id)
         .then((result) => {
-            // const data = {"book_results": results}
-            res.json({book_details : result})
-            //res.send(data);
+             const data = {"book_details": result}
+            //res.json({book_details : result})
+            res.send(data);
             // console.log(data);
         });
 
