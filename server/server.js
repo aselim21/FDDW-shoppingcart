@@ -14,6 +14,7 @@ const db_enki_products = 'enki-products';
 const db_collection_carts = 'carts';
 const db_collection_products = 'products';
 const db_collecrion_users = 'users';
+const ObjectId = require('mongodb').ObjectId; 
 
 //TODO! Load all cart ids here in the beginning!
 let cart_ids = db_connectAndDo(db_getAllCartIDs);
@@ -149,25 +150,28 @@ app.get('/products', (req, res) => {
             console.log(data);
         });
 });
-// app.get('/products/:genre', (req, res) => {
-//     console.log(req.params.genre);
-//     db_connectAndDo(db_findGenre, req.params.genre, db_collection_products, db_enki_products, false)
-//         .then((results) => {
-//             //let data = {"book_results": results}
-//             res.json({book_results : results})
-//             //res.send(data);
-//             console.log(data);
-//         });
+app.get('/products/:id', (req, res) => {
+    const book_id = req.params.id;
+    console.log(book_id);
+    db_connectAndDo(db_findBookId, false, db_collection_products, db_enki_products, book_id)
+        .then((result) => {
+            // const data = {"book_results": results}
+            res.json({book_details : result})
+            //res.send(data);
+            // console.log(data);
+        });
 
-// });
+});
 
 async function db_connectAndDo(todo, data, the_collection, the_db, filter) {
     try {
         await mongoClient.close();
         await mongoClient.connect();
         if (todo == db_findGenre) {
-            return await todo(data, the_collection, the_db, filter);
-        } else if (todo == db_updateData) {
+            return await todo(the_collection, the_db, filter);
+        } else if(todo == db_findBookId){
+            return await db_findBookId(the_collection,the_db,filter)
+        }else if(todo == db_updateData) {
                 return await todo(data, the_collection, the_db, filter);
         } else if (todo == db_findAll) {
                     return await todo(the_collection, the_db);
@@ -255,7 +259,7 @@ async function db_findAndUpdate(the_new_data, the_collection, the_db, filter) {
         console.error(e);
     }
 }
-async function db_findGenre(the_genre, the_collection, the_db) {
+async function db_findGenre(the_collection, the_db, the_genre) {
     const cursor = await mongoClient.db(the_db).collection(the_collection).find({ genre: the_genre });
     const results = await cursor.toArray();
     results.sort((a, b) => a.title.localeCompare(b.title));
@@ -264,6 +268,19 @@ async function db_findGenre(the_genre, the_collection, the_db) {
         return results;
     } else {
         console.log(`No listings found with the genre '${the_genre}'`);
+        return 0;
+    }
+}
+async function db_findBookId(the_collection, the_db, the_id) {
+    const cursor = await mongoClient.db(the_db).collection(the_collection).find({ _id: ObjectId(the_id) });
+    const result = await cursor.toArray();
+ 
+    console.log(result)
+    if (result.length > 0) {
+        console.log(`Found a listing in the collection with the id '${the_id}':`);
+        return result;
+    } else {
+        console.log(`No listings found with the id '${the_id}'`);
         return 0;
     }
 }
