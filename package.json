@@ -9,7 +9,8 @@
     "express": "^4.17.1",
     "express-session": "^1.17.2",
     "mongodb": "^4.1.0",
-    "mongoose": "^6.0.5"
+    "mongoose": "^6.0.5",
+    "requestify": "^0.2.5"
   },
   "devDependencies": {},
   "scripts": {

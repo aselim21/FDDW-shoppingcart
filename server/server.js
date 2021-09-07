@@ -171,6 +171,7 @@ app.put('/cart', (req, res) => {
 
 
 //PRODUCTS - Service
+
 app.get('/books', (req, res) => {
     //send all books from the db
     db_connectAndDo(db_findAll, false, db_collection_products, db_enki_products, false)
@@ -207,9 +208,7 @@ app.get('/books/:genre', (req,res)=>{
         res.send(result);
 
     });
-    
-
-})
+});
 
 
 //DATABASE - functions
