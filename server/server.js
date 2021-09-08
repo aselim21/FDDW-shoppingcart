@@ -1,34 +1,19 @@
-const { MongoClient, ConnectionClosedEvent } = require('mongodb');
+//MONGOOSE
+const mongoose = require('mongoose');
 const express = require('express');
 const cookieParser = require('cookie-parser');
-const cookieSession = require('cookie-session');
-const session = require('express-session');
-var path = require('path');
+const requestify = require('requestify');
+const jwt = require('jsonwebtoken');
+const jwtSecret = 'enki-online-book-store'; // secret for jwt authentication
+const PORT = process.env.PORT || 3000;
+const MongodbURI = "mongodb+srv://enki-admin-cart:enki1234@cluster0.5xz0p.mongodb.net/enki-carts?retryWrites=true&w=majority"
+const Cart = require('./models/cart_model.js');
+const Purchase = require('./models/purchase_model.js');
+
+const serverURL_products = 'https://enki-product.herokuapp.com'
+
 const app = express();
-app.use(express.static("src"));
-const MongodbURI = "mongodb+srv://enki-admin-cart:enki1234@cluster0.5xz0p.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
-const mongoClient = new MongoClient(MongodbURI);
-const db_enki_carts = 'enki-carts';
-const db_enki_users = 'enki-users';
-const db_enki_products = 'enki-products';
-const db_collection_carts = 'carts';
-const db_collection_purchase = 'purchase';
-const db_collection_products = 'products';
-const db_collecrion_users = 'users';
-const ObjectId = require('mongodb').ObjectId;
-let fs = require('fs');
-const https = require('https');
-const { ObjectID } = require('bson');
-
-const serverURL_products = 'http://127.0.0.1:3000'
-const serverURL_cart = 'http://127.0.0.1:3000';
-//http://127.0.0.1:3000 https://enki-cart.herokuapp.com
-const serverURL_user = '';
-
-let cart_ids = db_connectAndDo(db_getAllCartIDs);
-
 app.set('trust proxy', 1) // trust first proxy
-
 app.use(express.json());
 app.use(cookieParser());
 app.use((req, res, next) => {
@@ -50,385 +35,190 @@ app.use((req, res, next) => {
     next();
 });
 
-//zu löschen
+mongoose.connect(MongodbURI, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then((result) => app.listen(PORT, () => console.log(`Listening on port ${PORT}...`)))
+    .catch((err) => console.log(err));
+
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../src', '/index.html'));
-});
-app.get('/home-index', (req, res) => {
-    res.sendFile(path.join(__dirname, '../src', 'index.html'));
-});
-app.get('/products-index', (req, res) => {
-    res.sendFile(path.join(__dirname, '../src', 'products.html'));
-});
-app.get('/cart-index', (req, res) => {
-    res.sendFile(path.join(__dirname, '../src', 'cart.html'));
-});
+    res.send("Welcome to Enki's Shopping Cart Service")
+})
 
-//CART- Service
 app.get('/cart', (req, res) => {
-
     //1. Validate if there is a cookie
     const { cookies } = req;
     let the_books = [];
 
     if ('cart_id' in cookies) {
         //find the cart
-        db_connectAndDo(db_findCartId, false, db_collection_carts, db_enki_carts, req.cookies.cart_id)
-            .then((the_cart) => {
-                //retrieve more data for each product
-                the_cart.products.forEach(product => {
-                    db_connectAndDo(db_findElementById, false, db_collection_products, db_enki_products, product[0]).then((element) => {
-                        data = {
-                            'quantity': product[1],
-                            '_id': element._id,
-                            'title': element.title,
-                            'photo': element.photo,
-                            'available': element.available,
-                            'price': element.price,
-                            'calculated_price': (product[1] * element.price).toFixed(2)
-                        }
-                        //save the products in an array
-                        the_books.push(data);
-                        //if this is the last product from the list, then send the_books as result back
-                        if (the_cart.products.indexOf(product) == the_cart.products.length - 1) {
-
-                            setTimeout(function () {
-                                the_books.sort((a, b) => a.title.localeCompare(b.title));
-                                const result = { 'books': the_books };
-                                res.send(result);
-                                //wait 1ms in order the processes to finish without data being lost
-                            }, 100);
-                        }
-                    });
+        Cart.findOne({ cart_id: cookies.cart_id }).then((the_cart) => {
+            //read the product-id's from the cart
+            the_cart.products.forEach(product => {
+                //get details about the product communicating with the products service
+                requestify.get(`${serverURL_products}/books/${product[0]}`).then(function (response) {
+                    const element = response.getBody();
+                    const data = {
+                        'quantity': product[1],
+                        '_id': element._id,
+                        'title': element.title,
+                        'photo': element.photo,
+                        'available': element.available,
+                        'price': element.price,
+                        'calculated_price': (product[1] * element.price).toFixed(2)
+                    }
+                    //save the products in an array
+                    the_books.push(data);
+                    //if this is the last product from the list, then send the_books as a result back
+                    if (the_cart.products.length == the_books.length) {
+                        the_books.sort((a, b) => a.title.localeCompare(b.title));
+                        const result = { 'books': the_books };
+                        res.send(result);
+                    }
                 });
-            });
+            })
+        }).catch((err) => {
+            console.error(err);
+        });
     }
 });
 
+
 app.post('/cart/purchase', (req, res) => {
+    //TO TEST
+
     //validate cookies
     const { cookies } = req;
+    //console.log(req.user);
 
     if ('cart_id' in cookies) {
+
         //get the cart
-        db_connectAndDo(db_findCartId, false, db_collection_carts, db_enki_carts, cookies.cart_id).then((the_cart) => {
-
+        Cart.findOne({ cart_id: cookies.cart_id }).then((the_cart) => {
             //TODO : GET info about the logged user.
-            const purchase = {
-                'user_id': cookies.user_id,
-                'user_name': "TODO_name",
-                'user_surname': 'TODO_surname',
-                'products': the_cart.products
-            }
-            //create a purchase and delete the cart
-            db_connectAndDo(db_insertData, purchase, db_collection_purchase, db_enki_carts);
-            db_connectAndDo(db_deleteElementByFilter, false, db_collection_carts, db_enki_carts, { cart_id: cookies.cart_id });
 
+            const new_purchase = new Purchase({
+                'user_id': "Users ID",
+                'user_name': "TODO",
+                'user_last_name': "TODO",
+                'street': "TODO",
+                'city': "TODO",
+                'country_code': 123,
+                'sum_total': req.body.price,
+                'products': the_cart.products
+            });
+            new_purchase.save().then((result) => {
+                //console.log(result);
+            }).catch((err) => {
+                console.error(err);
+            });
+            Cart.deleteOne({ cart_id: cookies.cart_id })
+                .then((result) => {
+                    console.log(result)
+                }).catch((err) => {
+                    console.error(err)
+                });
             //make request to the Products service and update the "available" attribute of them
             const sold_products = {
                 'sold': the_cart.products
             }
-            makeHTTPrequest('PUT', 'enki-store.herokuapp.com', '/books', sold_products);
+            requestify.put(`${serverURL_products}/books`, sold_products)
+            .then(function (response) {
+                console.log(response);
+            });
 
             //delete the cart_id cookie
             res.clearCookie('cart_id');
             res.send();
-        })
+        }).catch((err)=>{
+            console.error(err);
+        });
     }
 });
+
+
+app.post('/cart', (req, res) => {
+    //create one with the chosen product
+    let randomNumber = generateRandomID();
+    const new_cart = new Cart({
+        'cart_id': randomNumber,
+        'products': [
+            [req.body.bookId, req.body.quantity]
+        ]
+    });
+    //save the new cart
+    new_cart.save().then((result) => {
+    }).catch((err) => {
+        console.error(err);
+    })
+    //send the cookie back
+    res.setHeader('Set-Cookie', setCookie('cart_id', randomNumber, 5));
+    res.status(200).send();
+
+});
+
 
 app.put('/cart', (req, res) => {
     //1. Validate if there is a cookie
     const { cookies } = req;
-
     //if there is already a created cart->update
     if ('cart_id' in cookies) {
-        let data_new = [req.body.bookId, req.body.quantity];
+        let the_new_data = [req.body.bookId, req.body.quantity];
         //find the product in the cart and update it
-        db_connectAndDo(db_findAndUpdateCart, data_new, db_collection_carts, db_enki_carts, { cart_id: cookies.cart_id });
-    } else {
-
-        //if there is no cart, create one with the chosen product
-        let randomNumber = generateRandomID();
-        //make sure carts don't get the same id
-        while (randomNumber in cart_ids) {
-            randomNumber = generateRandomID();
-        }
-        new_cart = {
-            'cart_id': randomNumber,
-            'products': [
-                [req.body.bookId, req.body.quantity]
-            ]
-        }
-        //save the new cart
-        db_connectAndDo(db_insertData, new_cart, db_collection_carts, db_enki_carts);
-
-        //send the cookie back
-        res.setHeader('Set-Cookie', setCookie('cart_id', randomNumber, 5));
-        res.status(200).send();
-    }
-});
-
-
-//PRODUCTS - Service
-
-app.get('/books', (req, res) => {
-    //send all books from the db
-    db_connectAndDo(db_findAll, false, db_collection_products, db_enki_products, false)
-        .then((results) => {
-            let data = { "book_results": results }
-            res.send(data);
-        });
-});
-
-app.get('/books/:id', (req, res) => {
-    //send only a specific book
-    const book_id = req.params.id;
-    console.log(book_id);
-    db_connectAndDo(db_findElementById, false, db_collection_products, db_enki_products, book_id)
-        .then((result) => {
-            res.send(result);
-        });
-});
-
-app.put('/books', (req, res) => {
-    //update the "available" of the products that are bought
-    const products = req.body.sold;
-    products.forEach((product) => {
-        //update every product
-        db_connectAndDo(db_findAndUpdateProduct, product[1], db_collection_products, db_enki_products, { _id: ObjectId(product[0]) });
-    });
-});
-
-app.get('/books/:genre', (req,res)=>{
-    const the_genre = req.params.genre;
-    const the_filter = { 'genre': the_genre };
-    //console.log(the_filter);
-    db_connectAndDo(db_findByFilter, false, db_collection_products, db_enki_products, {genre : the_genre}).then((result)=>{
-        res.send(result);
-
-    });
-});
-
-
-//DATABASE - functions
-async function db_connectAndDo(todo, data, the_collection, the_db, filter) {
-    try {
-        await mongoClient.close();
-        await mongoClient.connect();
-        if (todo == db_findByFilter) {
-            return await todo(the_collection, the_db, filter);
-        } else if (todo == db_findElementById) {
-            return await todo(the_collection, the_db, filter)
-        } else if (todo == db_findCartId) {
-            return await todo(the_collection, the_db, filter)
-        } else if (todo == db_findAll) {
-            return await todo(the_collection, the_db);
-        } else if (todo == db_getAllCartIDs) {
-            return await todo();
-        } else if (todo == db_insertData) {
-            return await todo(data, the_collection, the_db);
-        } else if (todo == db_findAndUpdateCart) {
-            return await todo(data, the_collection, the_db, filter);
-        } else if (todo == db_deleteElementByFilter) {
-            return await todo(the_collection, the_db, filter);
-        } else if (todo == db_findAndUpdateProduct) {
-            return await todo(data, the_collection, the_db, filter)
-        } else {
-            console.log("Function not found");
-            return -1;
-        }
-    } catch (e) {
-        console.error(e);
-    }
-}
-
-
-
-async function db_findAndUpdateProduct(sold_number, the_collection, the_db, the_filter) {
-    try {
-        //find the product
-        const the_product = await mongoClient.db(the_db).collection(the_collection).findOne(the_filter);
-        //calculate the new "available" value
-        const new_value = parseInt(the_product.available) - parseInt(sold_number);
-        //update the product
-        await mongoClient.db(the_db).collection(the_collection).updateOne(the_filter, { "$set": { "available": new_value.toString() } }, { "upsert": false });
-    } catch (e) {
-        console.error(e);
-    }
-}
-
-async function db_insertData(data, the_collection, the_db) {
-    try {
-        const result = await mongoClient.db(the_db).collection(the_collection).insertOne(data);
-        console.log(`Inserted new row in DB ${the_db} -> ${the_collection} with id ${result.insertedId}`);
-    } catch (e) {
-        console.error(e);
-    }
-}
-
-async function db_findCartId(the_collection, the_db, the_id) {
-    const result = await mongoClient.db(the_db).collection(the_collection).findOne({ cart_id: the_id });
-    console.log("Cart_id found");
-    if (result) {
-        console.log(`Found a listing in the collection with the id '${the_id}':`);
-        return result;
-    } else {
-        console.log(`No listings found with the id '${the_id}'`);
-        return 0;
-    }
-}
-
-async function db_deleteElementByFilter(the_collection, the_db, filter) {
-    await mongoClient.db(the_db).collection(the_collection).deleteOne(filter)
-        .then(result => { console.log(`Deleted ${result.deletedCount} item.`); return result.deletedCount })
-        .catch(err => { console.error(`Delete failed with error: ${err}`); return result.deletedCount });
-}
-
-async function db_findAndUpdateCart(the_new_data, the_collection, the_db, filter) {
-    try {
-        //find the cart
-        const the_cart = await mongoClient.db(the_db).collection(the_collection).findOne(filter);
-        //check if the product is already in cart
-        const foundIndex = the_cart.products.findIndex(element => element[0] == the_new_data[0]);
-        //if a product is found
-        if (foundIndex > -1) {
-            //check if i should delete this product from the cart
-            if (the_new_data[1] == '0') {
-                the_cart.products.splice(foundIndex, 1);
-                console.log(the_cart.products);
+        Cart.findOne({ cart_id: cookies.cart_id }).then((the_cart) => {
+            //search if this product is in the cart already
+            const foundIndex = the_cart.products.findIndex(element => element[0] == the_new_data[0]);
+            if (foundIndex > -1) {
+                //check if this product should be deleted from the cart
+                if (the_new_data[1] == '0') {
+                    //delete the product from the list
+                    the_cart.products.splice(foundIndex, 1);
+                } else {
+                    //update the product
+                    the_cart.products[foundIndex] = the_new_data;
+                }
             } else {
-                //update the products list
-                the_cart.products[foundIndex] = the_new_data;
+                //if this product is not already in the cart, add it to it
+                the_cart.products.push(the_new_data);
             }
-            await mongoClient.db(the_db).collection(the_collection).findOneAndUpdate(filter, { $set: { products: the_cart.products } });
-        } else {
-            //if this product isn't in the cart, then insert a new product in the cart
-            await mongoClient.db(the_db).collection(the_collection).findOneAndUpdate(filter, { $push: { products: the_new_data } });
-        }
-    } catch (e) {
-        console.error(e);
+            //update the products property in the cart
+            Cart.findOneAndUpdate({ cart_id: cookies.cart_id }, { products: the_cart.products }, { returnOriginal: false })
+                .then((update) => {
+                    console.log(update);
+                    res.status(200).send();
+                }).catch((err) => {
+                    console.log(err)
+                });
+        });
     }
-}
-async function db_findByFilter(the_collection, the_db, the_filter) {
-    const cursor = await mongoClient.db(the_db).collection(the_collection).find({genre : the_filter});
-    const results = await cursor.toArray();
-    results.sort((a, b) => a.title.localeCompare(b.title));
-    if (results.length > 0) {
-        console.log(`Found a listing in the collection with the '${the_filter}':`);
-        return results;
-    } else {
-        console.log(`No listings found with the '${the_filter}'`);
-        return 0;
-    }
-}
-async function db_findElementById(the_collection, the_db, the_id) {
-    const result = await mongoClient.db(the_db).collection(the_collection).findOne({ _id: ObjectId(the_id) });
-    if (result) {
-        console.log(`Found a listing in the collection with the id '${the_id}':`);
-        return result;
-    } else {
-        console.log(`No listings found with the id '${the_id}'`);
-        return 0;
-    }
-}
-async function db_findAll(the_collection, the_db) {
-    const cursor = await mongoClient.db(the_db).collection(the_collection).find();
-    const results = await cursor.toArray();
-    results.sort((a, b) => a.title.localeCompare(b.title));
-    if (results.length > 0) {
-        console.log(`Found a listing in the collection :`);
-        return results;
-    } else {
-        console.log(`No listings found `);
-        return 0;
-    }
-}
+});
 
-async function db_getAllCartIDs() {
-    const cursor = await mongoClient.db(db_enki_carts).collection(db_collection_carts).find();
-    const results = await cursor.toArray();
-    const resultsIDs = results.map(x => x.cart_id);
-    if (resultsIDs.length > 0) {
-        console.log(`Found a listing in the collection :`);
-        return resultsIDs;
-    } else {
-        console.log(`No listings found `);
-        return 0;
-    }
-}
 
-//COMMENTED - functions
+//OTHER functions
 
-// async function updateListingByName(client, nameOfListing, updatedListing) {
-//     const result = await client.db("sample_airbnb").collection("listingsAndReviews")
-//         .updateOne({ name: nameOfListing }, { $set: updatedListing });
-//     console.log(`${result.matchedCount} document(s) matched the query criteria.`);
-//     console.log(`${result.modifiedCount} document(s) was/were updated.`);
-// }
+function generateRandomID() {
+    const randomNumber = Math.random().toString();
+    const the_id = randomNumber.substring(2, randomNumber.length);
+    return the_id;
 
-// async function db_updateData(the_new_data, the_collection, the_db, filter) {
-
-//     try {
-//         const result = await mongoClient.db(the_db).collection(the_collection).updateOne(filter, { $addFields: { products: { $concatArrays: ["$products", ["test", "0"]] } } });
-//         console.log(`${result.matchedCount} document(s) matched the query criteria.`);
-//         console.log(`${result.modifiedCount} document(s) was/were updated.`);
-//     } catch (e) {
-//         console.error(e);
-//     }
-// }
-
-// async function db_aggregateData(the_new_data, the_collection, the_db, filter) {
-
-//     try {
-//         const result = await mongoClient.db(the_db).collection(the_collection).aggregate([{ $match: { cart_id: filter } }, { $addFields: { products: { $concatArrays: ["$products", [["test", "0"]]] } } }]);
-//         aggregate([
-//             { $match: { _id: 1 } },
-//             { $addFields: { homework: { $concatArrays: ["$homework", [7]] } } }
-//         ])
-//         console.log(`${result.matchedCount} document(s) matched the query criteria.`);
-//         console.log(`${result.modifiedCount} document(s) was/were updated.`);
-//     } catch (e) {
-//         console.error(e);
-//     }
-// }
-
-//OTHER- functions
-
-function makeHTTPrequest(the_method, the_host, the_path, data) {
-
-    const options = {
-        hostname: the_host,
-        path: the_path,
-        method: the_method,
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'Access-Control-Allow-Credentials': 'true'
-        }
-    }
-    const req = https.request(options, res => {
-        console.log(`statusCode: ${res.statusCode}`);
-    })
-
-    req.on('error', error => {
-        console.error(error);
-    });
-
-    req.write(JSON.stringify(data));
-    req.end();
 }
 
 function setCookie(name, value, days) {
     return name + "=" + value + ";path=/;SameSite=None;Secure;Max-Age=" + 86400 * days;
 }
 
-function generateRandomID() {
-    let randomNumber = Math.random().toString();
-    randomNumber = randomNumber.substring(2, randomNumber.length);
-    return randomNumber;
+function authenticateToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (token == null) res.sendStatus(401);
+    else {
+        jwt.verify(token, jwtSecret, (err, user) => {
+            if (err) {
+                console.log(err);
+                res.sendStatus(403);
+            } else {
+                req.user = user;
+                next();
+            }
+        })
+    }
 }
-
-
-const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`Listening on port ${port}...`));
