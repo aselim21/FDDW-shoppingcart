@@ -23,7 +23,8 @@ app.use((req, res, next) => {
         'http://127.0.0.1:5501',
         'http://127.0.0.1:3000',
         'http://127.0.0.1:3001',
-        'https://enki-store.herokuapp.com'
+        'https://enki-store.herokuapp.com',
+        'https://enki-product.herokuapp.com'
     ];
     if (corsWhitelist.indexOf(req.headers.origin) !== -1) {
         res.header('Access-Control-Allow-Origin', req.headers.origin);
