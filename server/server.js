@@ -50,7 +50,7 @@ app.use((req, res, next) => {
     // res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Credentials, Cookie, Set-Cookie');
     res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE, OPTIONS, HEAD');
+    res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE, OPTIONS,OPTION, HEAD');
     //res.header('Access-Control-Request-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Credentials ');
     next();
 });
@@ -171,7 +171,7 @@ app.post('/cart', (req, res) => {
     })
     //send the cookie back
     res.setHeader('Set-Cookie', setCookie('cart_id', randomNumber, 5));
-    res.status(200).send();
+    res.status(200);
 
 });
 
@@ -203,7 +203,7 @@ app.put('/cart', (req, res) => {
             Cart.findOneAndUpdate({ cart_id: cookies.cart_id }, { products: the_cart.products }, { returnOriginal: false })
                 .then((update) => {
                     console.log(update);
-                    res.status(200).send();
+                    res.status(200);
                 }).catch((err) => {
                     console.log(err)
                 });
@@ -222,7 +222,7 @@ function generateRandomID() {
 }
 
 function setCookie(name, value, days) {
-    return name + "=" + value + ";path=/;SameSite=None;Secure;Max-Age=" + 86400 * days;
+    return name + "=" + value + "Secure;SameSite=None;Path=/;Max-Age=" + 86400 * days;
 }
 
 function authenticateToken(req, res, next) {
