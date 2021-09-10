@@ -14,6 +14,11 @@ const Purchase = require('./models/purchase_model.js');
 const serverURL_products = 'https://enki-product.herokuapp.com'
 
 const app = express();
+
+var corsOptions = {
+    origin: 'https://enki-bookstore.herokuapp.com',
+    optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+  }
 // const corsWhitelist = [
 //         'http://127.0.0.1:5500',
 //         'http://127.0.0.1:5501',
@@ -31,8 +36,8 @@ const app = express();
 //     }
 //   }
 // }
-app.use(cors());
 
+app.use(cors(corsOptions));
 app.set('trust proxy', 1) // trust first proxy
 app.use(express.json());
 app.use(cookieParser());
