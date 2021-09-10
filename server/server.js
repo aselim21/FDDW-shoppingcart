@@ -14,24 +14,24 @@ const Purchase = require('./models/purchase_model.js');
 const serverURL_products = 'https://enki-product.herokuapp.com'
 
 const app = express();
-const corsWhitelist = [
-        'http://127.0.0.1:5500',
-        'http://127.0.0.1:5501',
-        'http://127.0.0.1:3000',
-        'http://127.0.0.1:3001',
-        'https://enki-bookstore.herokuapp.com',
-        'https://enki-product.herokuapp.com'
-    ];
-var corsOptions = {
-  origin: function (origin, callback) {
-    if (corsWhitelist.indexOf(origin) !== -1) {
-      callback(null, true)
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  }
-}
-app.use(cors(corsOptions));
+// const corsWhitelist = [
+//         'http://127.0.0.1:5500',
+//         'http://127.0.0.1:5501',
+//         'http://127.0.0.1:3000',
+//         'http://127.0.0.1:3001',
+//         'https://enki-bookstore.herokuapp.com',
+//         'https://enki-product.herokuapp.com'
+//     ];
+// var corsOptions = {
+//   origin: function (origin, callback) {
+//     if (corsWhitelist.indexOf(origin) !== -1) {
+//       callback(null, true)
+//     } else {
+//       callback(new Error('Not allowed by CORS'));
+//     }
+//   }
+// }
+app.use(cors());
 
 app.set('trust proxy', 1) // trust first proxy
 app.use(express.json());
