@@ -17,7 +17,8 @@ const app = express();
 
 var corsOptions = {
     origin: 'https://enki-bookstore.herokuapp.com',
-    optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+    optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204,
+    credentials: true
   }
 // const corsWhitelist = [
 //         'http://127.0.0.1:5500',
