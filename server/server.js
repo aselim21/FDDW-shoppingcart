@@ -26,9 +26,10 @@ const corsWhitelist = [
     'http://127.0.0.1:3000/'
 ];
 var corsOptions = {
-    origin: ['https://enki-bookstore.herokuapp.com'],
-    optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204,
-    credentials: true
+    origin: 'https://enki-bookstore.herokuapp.com',
+    credentials: true,
+    optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204,
+    
 }
 
 app.use(cors(corsOptions));
@@ -221,7 +222,7 @@ function generateRandomID() {
 }
 
 function setCookie(name, value, days) {
-    return name + "=" + value + ";path=/;SameSite=Lax;Max-Age=" + 86400 * days;
+    return name + "=" + value + ";path=/;SameSite=None;Secure;Max-Age=" + 86400 * days;
 }
 
 function authenticateToken(req, res, next) {
