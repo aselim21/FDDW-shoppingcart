@@ -15,28 +15,26 @@ const serverURL_products = 'https://enki-product.herokuapp.com'
 
 const app = express();
 
+// var corsOptions = {
+//     origin: 'https://enki-bookstore.herokuapp.com',
+//     optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204,
+//     credentials: true
+// }
+const corsWhitelist = [
+    'https://enki-bookstore.herokuapp.com',
+    'https://enki-product.herokuapp.com'
+];
 var corsOptions = {
-    origin: 'https://enki-bookstore.herokuapp.com',
+    origin: function (origin, callback) {
+        if (corsWhitelist.indexOf(origin) !== -1) {
+            callback(null, true)
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204,
     credentials: true
-  }
-// const corsWhitelist = [
-//         'http://127.0.0.1:5500',
-//         'http://127.0.0.1:5501',
-//         'http://127.0.0.1:3000',
-//         'http://127.0.0.1:3001',
-//         'https://enki-bookstore.herokuapp.com',
-//         'https://enki-product.herokuapp.com'
-//     ];
-// var corsOptions = {
-//   origin: function (origin, callback) {
-//     if (corsWhitelist.indexOf(origin) !== -1) {
-//       callback(null, true)
-//     } else {
-//       callback(new Error('Not allowed by CORS'));
-//     }
-//   }
-// }
+}
 
 app.use(cors(corsOptions));
 app.set('trust proxy', 1) // trust first proxy
@@ -148,14 +146,14 @@ app.post('/cart/purchase', (req, res) => {
                 'sold': the_cart.products
             }
             requestify.put(`${serverURL_products}/books`, sold_products)
-            .then(function (response) {
-                console.log(response);
-            });
+                .then(function (response) {
+                    console.log(response);
+                });
 
             //delete the cart_id cookie
             res.clearCookie('cart_id');
             res.send();
-        }).catch((err)=>{
+        }).catch((err) => {
             console.error(err);
         });
     }
