@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const requestify = require('requestify');
+const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const jwtSecret = 'enki-online-book-store'; // secret for jwt authentication
 const PORT = process.env.PORT || 3000;
@@ -13,6 +14,25 @@ const Purchase = require('./models/purchase_model.js');
 const serverURL_products = 'https://enki-product.herokuapp.com'
 
 const app = express();
+const corsWhitelist = [
+        'http://127.0.0.1:5500',
+        'http://127.0.0.1:5501',
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:3001',
+        'https://enki-bookstore.herokuapp.com',
+        'https://enki-product.herokuapp.com'
+    ];
+var corsOptions = {
+  origin: function (origin, callback) {
+    if (corsWhitelist.indexOf(origin) !== -1) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+}
+app.use(cors(corsOptions));
+
 app.set('trust proxy', 1) // trust first proxy
 app.use(express.json());
 app.use(cookieParser());
@@ -28,7 +48,7 @@ app.use((req, res, next) => {
     // if (corsWhitelist.indexOf(req.headers.origin) !== -1) {
     //     res.header('Access-Control-Allow-Origin', req.headers.origin);
     // }
-    res.header('Access-Control-Allow-Origin', '*');
+    // res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Credentials, Cookie, Set-Cookie');
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE, OPTION, HEAD');
