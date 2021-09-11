@@ -98,18 +98,17 @@ app.get('/carts/:id',(req,res)=>{
 
 
 app.post('/cart/purchase', (req, res) => {
-    //TO TEST
+   //1. Validate if there is a cookie
+   const cart_id_value = req.body.cart_id;
 
-    //validate cookies
-    const { cookies } = req;
-    //console.log(req.user);
-
-    if ('cart_id' in cookies) {
+    if (cart_id_value != null) {
 
         //get the cart
-        Cart.findOne({ cart_id: cookies.cart_id }).then((the_cart) => {
+        Cart.findOne({ cart_id: cart_id_value }).then((the_cart) => {
             //TODO : GET info about the logged user.
-
+            if(the_cart == null){
+            res.send("Cart doesn't exist");
+            }else{
             const new_purchase = new Purchase({
                 'user_id': "Users ID",
                 'user_name': "TODO",
@@ -125,7 +124,7 @@ app.post('/cart/purchase', (req, res) => {
             }).catch((err) => {
                 console.error(err);
             });
-            Cart.deleteOne({ cart_id: cookies.cart_id })
+            Cart.deleteOne({ cart_id: cart_id_value })
                 .then((result) => {
                     console.log(result)
                 }).catch((err) => {
@@ -138,16 +137,16 @@ app.post('/cart/purchase', (req, res) => {
             requestify.put(`${serverURL_products}/books`, sold_products)
                 .then(function (response) {
                     console.log(response);
+                }).catch((err)=>{
+                    console.error(err);
                 });
-
-            //delete the cart_id cookie
-            res.clearCookie('cart_id');
             res.send();
+            }
         }).catch((err) => {
             console.error(err);
         });
     } else {
-        res.send();
+        res.send("No cart_id");
     }
 });
 
@@ -158,8 +157,15 @@ app.get('/carts',(req,res)=>{
     }).catch((err)=>{
         console.error(err);
     })
-})
-
+});
+app.get('/purchases',(req,res)=>{
+    Purchase.find()
+    .then((result)=>{
+        res.send(result);
+    }).catch((err)=>{
+        console.error(err);
+    })
+});
 app.post('/cart', (req, res) => {
 
     //create one with the chosen product
