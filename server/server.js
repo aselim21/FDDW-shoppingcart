@@ -226,7 +226,29 @@ app.put('/cart', (req, res) => {
                 // res.setHeader('Set-Cookie', setCookie('cart_id',cookies.cart_id , 5));
                 res.status(200).send("cookie was updated");
         } else {
-            res.send("Cart_id is null");
+            let randomNumber = generateRandomID();
+            console.log(randomNumber);
+            const new_cart = new Cart({
+                'cart_id': randomNumber,
+                'products': [
+                    [req.body.bookId, req.body.quantity]
+                ]
+            });
+            console.log(new_cart)
+            //save the new cart
+            new_cart.save().then((result) => {
+                console.log(result);
+            }).catch((err) => {
+                console.error(err);
+            })
+            //send the cookie back
+            //res.setCookie('my-new-cookie', 'Hi There');
+               // res.cookie('cart_id',randomNumber , { maxAge: 86400 * 5, sameSite:'none', secure:true});
+            const the_cookie = setCookie('cart_id', randomNumber, 5);
+            console.log(the_cookie)
+            res.setHeader('Set-Cookie', setCookie('cart_id', randomNumber, 5));
+                res.status(200).send("cart_id was null, set new id");
+           
         }
             //update the products property in the cart
        
