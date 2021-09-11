@@ -185,11 +185,11 @@ app.post('/cart', (req, res) => {
 
 
 app.put('/cart', (req, res) => {
-    const cart_id_value = res.body.cart_id;
+    const cart_id_value = req.body.cart_id;
     //1. Validate if there is a cookie
 
     //if there is already a created cart->update
-    if (cookies.cart_id != null) {
+    if (cart_id_value != null) {
         let the_new_data = [req.body.bookId, req.body.quantity];
         //find the product in the cart and update it
         Cart.findOne({ cart_id: cart_id_value }).then((the_cart) => {
