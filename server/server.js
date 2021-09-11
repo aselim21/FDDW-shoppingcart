@@ -166,10 +166,10 @@ app.post('/cart', (req, res) => {
     })
     //send the cookie back
     //res.setCookie('my-new-cookie', 'Hi There');
-    res.cookie('cart_id',randomNumber , { maxAge: 86400 * 5, sameSite:'none', secure:true});
-    //const the_cookie = setCookie('cart_id', randomNumber, 5);
-    //console.log(the_cookie)
-    //res.setHeader('Set-Cookie', the_cookie);
+    //res.cookie('cart_id',randomNumber , { maxAge: 86400 * 5, sameSite:'none', secure:true});
+    const the_cookie = setCookie('cart_id', randomNumber, 5);
+    console.log(the_cookie)
+    res.setHeader('Set-Cookie', the_cookie);
     res.status(200).send();
 
 });
