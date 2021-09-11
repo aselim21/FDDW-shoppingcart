@@ -14,32 +14,34 @@ const Purchase = require('./models/purchase_model.js');
 const serverURL_products = 'https://enki-product.herokuapp.com'
 
 const app = express();
+app.set('trust proxy', 1) // trust first proxy
+// var corsOptions = {
+//     origin: ['https://enki-bookstore.herokuapp.com','https://enki-store.herokuapp.com'],
+//     optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
+//     credentials: true
+// }
 
-var corsOptions = {
-    origin: ['https://enki-bookstore.herokuapp.com','https://enki-store.herokuapp.com'],
-    optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
-    credentials: true,
-    preflightContinue: true
-}
-
-app.use(cors(corsOptions));
+// app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 app.use((req, res, next) => {
-    // const corsWhitelist = [
-    //     'http://127.0.0.1:5500',
-    //     'http://127.0.0.1:5501',
-    //     'http://127.0.0.1:3000',
-    //     'http://127.0.0.1:3001',
-    //     'https://enki-bookstore.herokuapp.com',
-    //     'https://enki-product.herokuapp.com'
-    // ];
-    // if (corsWhitelist.indexOf(req.headers.origin) !== -1) {
-    //     res.header('Access-Control-Allow-Origin', req.headers.origin);
-    // }
+    const corsWhitelist = [
+        'http://127.0.0.1:5500',
+        'http://127.0.0.1:5501',
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:3001',
+        'https://enki-bookstore.herokuapp.com',
+        'https://enki-product.herokuapp.com',
+        'https://enki-store.herokuapp.com'
+    ];
+    if (corsWhitelist.indexOf(req.headers.origin) !== -1) {
+        res.header('Access-Control-Allow-Origin', req.headers.origin);
+        console.log(req.headers.origin);
+    }
     // res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Credentials, Cookie, Set-Cookie');
     res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Expose-Headers', 'Set-Cookie');
     res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE, OPTIONS, HEAD');
     //res.header('Access-Control-Request-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Credentials ');
     next();
@@ -57,6 +59,7 @@ app.get('/cart', (req, res) => {
     //1. Validate if there is a cookie
     const { cookies } = req;
     let the_books = [];
+    console.log(cookies)
 
     if ('cart_id' in cookies) {
         //find the cart
@@ -150,6 +153,8 @@ app.post('/cart/purchase', (req, res) => {
 
 
 app.post('/cart', (req, res) => {
+    const { cookies } = req;
+    console.log(cookies);
     //create one with the chosen product
     let randomNumber = generateRandomID();
     console.log(randomNumber);
@@ -168,18 +173,19 @@ app.post('/cart', (req, res) => {
     })
     //send the cookie back
     //res.setCookie('my-new-cookie', 'Hi There');
-    //res.cookie('cart_id',randomNumber , { maxAge: 86400 * 5, sameSite:'none', secure:true});
+    //res.cookie('cart_id',randomNumber , { maxAge: 1, sameSite:'none', secure:true});
     const the_cookie = setCookie('cart_id', randomNumber, 5);
     console.log(the_cookie)
-    res.setHeader('Set-Cookie', the_cookie);
-    res.status(200).send();
-
+    res.setHeader('Set-Cookie', setCookie('cart_id', randomNumber, 5));
+    res.status(200).send("new cookie set");
 });
 
 
 app.put('/cart', (req, res) => {
+    console.log("PUT CART")
     //1. Validate if there is a cookie
     const { cookies } = req;
+    console.log(cookies)
     //if there is already a created cart->update
     if ('cart_id' in cookies) {
         let the_new_data = [req.body.bookId, req.body.quantity];
@@ -213,10 +219,12 @@ app.put('/cart', (req, res) => {
             Cart.findOneAndUpdate({ cart_id: cookies.cart_id }, { products: the_cart.products }, { returnOriginal: false })
                 .then((update) => {
                     console.log(update);
-                    res.status(200).send();
+                    //res.status(200).send();
                 }).catch((err) => {
                     console.log(err)
                 });
+                // res.setHeader('Set-Cookie', setCookie('cart_id',cookies.cart_id , 5));
+                res.status(200).send("cookie was updated");
         } else {
             res.send("Cart_id is null");
         }
@@ -224,7 +232,30 @@ app.put('/cart', (req, res) => {
        
         });
     }else{
-        res.send("Co cart_id in cookies");
+        //create one with the chosen product
+    let randomNumber = generateRandomID();
+    console.log(randomNumber);
+    const new_cart = new Cart({
+        'cart_id': randomNumber,
+        'products': [
+            [req.body.bookId, req.body.quantity]
+        ]
+    });
+    console.log(new_cart)
+    //save the new cart
+    new_cart.save().then((result) => {
+        console.log(result);
+    }).catch((err) => {
+        console.error(err);
+    })
+    //send the cookie back
+    //res.setCookie('my-new-cookie', 'Hi There');
+       // res.cookie('cart_id',randomNumber , { maxAge: 86400 * 5, sameSite:'none', secure:true});
+    const the_cookie = setCookie('cart_id', randomNumber, 5);
+    console.log(the_cookie)
+    res.setHeader('Set-Cookie', setCookie('cart_id', randomNumber, 5));
+        res.status(200).send("new cookie was set");
+    
     }
 });
 
