@@ -61,6 +61,9 @@ app.get('/carts/:id',(req,res)=>{
         //find the cart
         Cart.findOne({ cart_id: cart_id_value }).then((the_cart) => {
             //read the product-id's from the cart
+            if( the_cart.products.length == 0){
+                res.send("Cart is empty");
+            }
             the_cart.products.forEach(product => {
                 //get details about the product communicating with the products service
                 requestify.get(`${serverURL_products}/books/${product[0]}`).then(function (response) {
