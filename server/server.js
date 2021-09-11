@@ -153,6 +153,14 @@ app.post('/cart/purchase', (req, res) => {
     }
 });
 
+app.get('/carts',(req,res)=>{
+    Cart.find()
+    .then((result)=>{
+        res.send(result);
+    }).catch((err)=>{
+        console.error(err);
+    })
+})
 
 app.post('/cart', (req, res) => {
 
@@ -177,15 +185,14 @@ app.post('/cart', (req, res) => {
 
 
 app.put('/cart', (req, res) => {
-    console.log("PUT CART")
+    const cart_id_value = res.body.cart_id;
     //1. Validate if there is a cookie
-    const { cookies } = req;
-    console.log(cookies)
+
     //if there is already a created cart->update
-    if ('cart_id' in cookies && cookies.cart_id != null) {
+    if (cookies.cart_id != null) {
         let the_new_data = [req.body.bookId, req.body.quantity];
         //find the product in the cart and update it
-        Cart.findOne({ cart_id: cookies.cart_id }).then((the_cart) => {
+        Cart.findOne({ cart_id: cart_id_value }).then((the_cart) => {
 
             //search if this product is in the cart already
             console.log(the_cart)
@@ -211,44 +218,21 @@ app.put('/cart', (req, res) => {
                 the_cart.products.push(the_new_data);
 
             }
-            Cart.findOneAndUpdate({ cart_id: cookies.cart_id }, { products: the_cart.products }, { returnOriginal: false })
+            Cart.findOneAndUpdate({ cart_id: cart_id_value}, { products: the_cart.products }, { returnOriginal: false })
                 .then((update) => {
                     console.log(update);
-                    //res.status(200).send();
+                    res.status(200).send("cookie was updated");
                 }).catch((err) => {
                     console.log(err)
                 });
             // res.setHeader('Set-Cookie', setCookie('cart_id',cookies.cart_id , 5));
-            res.status(200).send("cookie was updated");
+            //res.status(200).send("cookie was updated");
 
             //update the products property in the cart
 
         });
-    } else {
-        //create one with the chosen product
-        let randomNumber = generateRandomID();
-        console.log(randomNumber);
-        const new_cart = new Cart({
-            'cart_id': randomNumber,
-            'products': [
-                [req.body.bookId, req.body.quantity]
-            ]
-        });
-        console.log(new_cart)
-        //save the new cart
-        new_cart.save().then((result) => {
-            console.log(result);
-        }).catch((err) => {
-            console.error(err);
-        })
-        //send the cookie back
-        //res.setCookie('my-new-cookie', 'Hi There');
-        // res.cookie('cart_id',randomNumber , { maxAge: 86400 * 5, sameSite:'none', secure:true});
-        const the_cookie = setCookie('cart_id', randomNumber, 5);
-        console.log(the_cookie)
-        res.setHeader('Set-Cookie', setCookie('cart_id', randomNumber, 5));
-        res.status(200).send("new cookie was set");
-
+    }else{
+        res.status(200).send("Tried to PUT but cookie_id is null");
     }
 });
 
