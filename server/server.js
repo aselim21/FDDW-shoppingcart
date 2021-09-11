@@ -54,17 +54,12 @@ mongoose.connect(MongodbURI, { useNewUrlParser: true, useUnifiedTopology: true }
 app.get('/', (req, res) => {
     res.send("Welcome to Enki's Shopping Cart Service")
 })
-
-app.get('/cart', (req, res) => {
-    //1. Validate if there is a cookie
-    const { cookies } = req;
+app.get('/carts/:id',(req,res)=>{
+    const cart_id_value = req.params.id;
     let the_books = [];
-    console.log(cookies)
-
-    if ('cart_id' in cookies && cookies.cart_id != null) {
-
+    if (cart_id_value != null) {
         //find the cart
-        Cart.findOne({ cart_id: cookies.cart_id }).then((the_cart) => {
+        Cart.findOne({ cart_id: cart_id_value }).then((the_cart) => {
             //read the product-id's from the cart
             the_cart.products.forEach(product => {
                 //get details about the product communicating with the products service
@@ -184,9 +179,9 @@ app.post('/cart', (req, res) => {
 });
 
 
-app.put('/cart', (req, res) => {
-    const cart_id_value = req.body.cart_id;
+app.put('/cart', (req, res) => { 
     //1. Validate if there is a cookie
+    const cart_id_value = req.body.cart_id;
 
     //if there is already a created cart->update
     if (cart_id_value != null) {
@@ -206,13 +201,7 @@ app.put('/cart', (req, res) => {
                     //update the product
                     the_cart.products[foundIndex] = the_new_data;
                 }
-                // Cart.findOneAndUpdate({ cart_id: cookies.cart_id }, { products: the_cart.products }, { returnOriginal: false })
-                // .then((update) => {
-                //     console.log(update);
-                //     res.status(200).send();
-                // }).catch((err) => {
-                //     console.log(err)
-                // });
+           
             } else {
                 //if this product is not already in the cart, add it to it
                 the_cart.products.push(the_new_data);
@@ -225,11 +214,6 @@ app.put('/cart', (req, res) => {
                 }).catch((err) => {
                     console.log(err)
                 });
-            // res.setHeader('Set-Cookie', setCookie('cart_id',cookies.cart_id , 5));
-            //res.status(200).send("cookie was updated");
-
-            //update the products property in the cart
-
         });
     }else{
         res.status(200).send("Tried to PUT but cookie_id is null");
