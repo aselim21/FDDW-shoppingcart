@@ -16,7 +16,7 @@ const serverURL_products = 'https://enki-product.herokuapp.com'
 const app = express();
 
 var corsOptions = {
-    origin: ['https://enki-bookstore.herokuapp.com'],
+    origin: ['https://enki-bookstore.herokuapp.com','https://enki-store.herokuapp.com'],
     optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
     credentials: true,
     preflightContinue: true
