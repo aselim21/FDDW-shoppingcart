@@ -155,16 +155,18 @@ app.post('/cart/purchase', (req, res) => {
 
 
 app.post('/cart', (req, res) => {
-
+    const { cookies } = req;
+    console.log(cookies);
     //create one with the chosen product
     let randomNumber = generateRandomID();
-    
+    console.log(randomNumber);
     const new_cart = new Cart({
         'cart_id': randomNumber,
         'products': [
             [req.body.bookId, req.body.quantity]
         ]
     });
+    console.log(new_cart)
     //save the new cart
     new_cart.save().then((result) => {
         console.log(result);
@@ -172,7 +174,12 @@ app.post('/cart', (req, res) => {
         console.error(err);
     })
     //send the cookie back
-    res.status(200).send(randomNumber);
+    //res.setCookie('my-new-cookie', 'Hi There');
+    //res.cookie('cart_id',randomNumber , { maxAge: 1, sameSite:'none', secure:true});
+    const the_cookie = setCookie('cart_id', randomNumber, 5);
+    console.log(the_cookie)
+    res.setHeader('Set-Cookie', setCookie('cart_id', randomNumber, 5));
+    res.status(200).send("new cookie set");
 });
 
 
