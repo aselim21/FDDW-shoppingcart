@@ -150,20 +150,27 @@ app.post('/cart/purchase', (req, res) => {
 app.post('/cart', (req, res) => {
     //create one with the chosen product
     let randomNumber = generateRandomID();
+    console.log(randomNumber);
     const new_cart = new Cart({
         'cart_id': randomNumber,
         'products': [
             [req.body.bookId, req.body.quantity]
         ]
     });
+    console.log(new_cart)
     //save the new cart
     new_cart.save().then((result) => {
+        console.log(result);
     }).catch((err) => {
         console.error(err);
     })
     //send the cookie back
-    res.setHeader('Set-Cookie', setCookie('cart_id', randomNumber, 5));
-    res.status(200);
+    //res.setCookie('my-new-cookie', 'Hi There');
+    res.cookie('cart_id',randomNumber , { maxAge: 86400 * 5  });
+    const the_cookie = setCookie('cart_id', randomNumber, 5);
+    console.log(the_cookie)
+    //res.setHeader('Set-Cookie', the_cookie);
+    res.status(200).send();
 
 });
 
@@ -176,7 +183,9 @@ app.put('/cart', (req, res) => {
         let the_new_data = [req.body.bookId, req.body.quantity];
         //find the product in the cart and update it
         Cart.findOne({ cart_id: cookies.cart_id }).then((the_cart) => {
+            if(the_cart != null){
             //search if this product is in the cart already
+            console.log(the_cart)
             const foundIndex = the_cart.products.findIndex(element => element[0] == the_new_data[0]);
             if (foundIndex > -1) {
                 //check if this product should be deleted from the cart
@@ -187,21 +196,33 @@ app.put('/cart', (req, res) => {
                     //update the product
                     the_cart.products[foundIndex] = the_new_data;
                 }
+                // Cart.findOneAndUpdate({ cart_id: cookies.cart_id }, { products: the_cart.products }, { returnOriginal: false })
+                // .then((update) => {
+                //     console.log(update);
+                //     res.status(200).send();
+                // }).catch((err) => {
+                //     console.log(err)
+                // });
             } else {
                 //if this product is not already in the cart, add it to it
                 the_cart.products.push(the_new_data);
+                
             }
-            //update the products property in the cart
             Cart.findOneAndUpdate({ cart_id: cookies.cart_id }, { products: the_cart.products }, { returnOriginal: false })
                 .then((update) => {
                     console.log(update);
-                    res.status(200);
+                    res.status(200).send();
                 }).catch((err) => {
                     console.log(err)
                 });
+        } else {
+            res.send("Cart_id is null");
+        }
+            //update the products property in the cart
+       
         });
     }else{
-        res.send();
+        res.send("Co cart_id in cookies");
     }
 });
 
@@ -216,7 +237,7 @@ function generateRandomID() {
 }
 
 function setCookie(name, value, days) {
-    return name + "=" + value + "Secure;SameSite=None;Path=/;Max-Age=" + 86400 * days;
+    return name + "=" + value + ";Secure;SameSite=None;Path=/;Max-Age=" + 86400 * days;
 }
 
 function authenticateToken(req, res, next) {
