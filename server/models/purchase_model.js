@@ -12,5 +12,5 @@ const purchase_schema = new Schema({
     products: [[String,String]]
 },{timestamps:true});
 
-const Purchase = mongoose.model('Purchse', purchase_schema);
+const Purchase = mongoose.model('Purchase', purchase_schema);
 module.exports = Purchase;
