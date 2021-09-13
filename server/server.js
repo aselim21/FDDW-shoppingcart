@@ -1,11 +1,8 @@
 //MONGOOSE
 const mongoose = require('mongoose');
 const express = require('express');
-const cookieParser = require('cookie-parser');
 const requestify = require('requestify');
-const cors = require('cors');
 const jwt = require('jsonwebtoken');
-// const jwtSecret = 'enki-online-book-store'; // secret for jwt authentication
 const refreshTokenSecret = 'enki-refresh-token';
 const PORT = process.env.PORT || 3000;
 const MongodbURI = "mongodb+srv://enki-admin-cart:enki1234@cluster0.5xz0p.mongodb.net/enki-carts?retryWrites=true&w=majority"
@@ -15,16 +12,7 @@ const Purchase = require('./models/purchase_model.js');
 const serverURL_products = 'https://enki-product.herokuapp.com'
 
 const app = express();
-app.set('trust proxy', 1) // trust first proxy
-// var corsOptions = {
-//     origin: ['https://enki-bookstore.herokuapp.com','https://enki-store.herokuapp.com'],
-//     optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
-//     credentials: true
-// }
-
-// app.use(cors(corsOptions));
 app.use(express.json());
-app.use(cookieParser());
 app.use((req, res, next) => {
     const corsWhitelist = [
         'http://127.0.0.1:5500',
