@@ -31,5 +31,5 @@ The service is connected to MongoDB.
 * GET '/purhcases' - sends back all the purhcases from the database.
 * POST 'cart/purchase' - After validating that the user has logged in and has an existing shopping cart, a new Purchase with user's details and products list is being created, the shipping cart is being deleted from the DB and a PUT request to the Products Service is being fired. This last step has the goal to decrement the "available" attribute of the products, that have been purchased.  
 
-
+#### The project-website that implements this service : https://enki-bookstore.herokuapp.com
 
