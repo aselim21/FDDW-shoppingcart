@@ -5,7 +5,8 @@ const cookieParser = require('cookie-parser');
 const requestify = require('requestify');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
-const jwtSecret = 'enki-online-book-store'; // secret for jwt authentication
+// const jwtSecret = 'enki-online-book-store'; // secret for jwt authentication
+const refreshTokenSecret = 'enki-refresh-token';
 const PORT = process.env.PORT || 3000;
 const MongodbURI = "mongodb+srv://enki-admin-cart:enki1234@cluster0.5xz0p.mongodb.net/enki-carts?retryWrites=true&w=majority"
 const Cart = require('./models/cart_model.js');
@@ -49,7 +50,7 @@ app.use((req, res, next) => {
 
 mongoose.connect(MongodbURI, { useNewUrlParser: true, useUnifiedTopology: true })
     .then((result) => app.listen(PORT, () => console.log(`Listening on port ${PORT}...`)))
-    .catch((err) => console.log(err));
+    .catch(err => res.status(400).json("Error: " + err));
 
 app.get('/', (req, res) => {
     res.send("Welcome to Enki's Shopping Cart Service")
@@ -87,9 +88,7 @@ app.get('/carts/:id',(req,res)=>{
                     }
                 });
             })
-        }).catch((err) => {
-            console.error(err);
-        });
+        }).catch(err => res.status(400).json("Error: " + err));
 
     } else {
         res.send("no cart_id was found");
@@ -100,36 +99,36 @@ app.get('/carts/:id',(req,res)=>{
 app.post('/cart/purchase', (req, res) => {
    //1. Validate if there is a cookie
    const cart_id_value = req.body.cart_id;
+   const refreshToken_value = req.body.jid;
+   console.log(cart_id_value);
+   console.log(refreshToken_value)
 
-    if (cart_id_value != null) {
+    if (cart_id_value && refreshToken_value ) {
 
         //get the cart
         Cart.findOne({ cart_id: cart_id_value }).then((the_cart) => {
-            //TODO : GET info about the logged user.
+            
             if(the_cart == null){
             res.send("Cart doesn't exist");
             }else{
+              //TODO : GET info about the logged user.  
+            const user = authenticateToken(refreshToken_value);
             const new_purchase = new Purchase({
-                'user_id': "Users ID",
-                'user_name': "TODO",
-                'user_last_name': "TODO",
-                'street': "TODO",
-                'city': "TODO",
-                'country_code': 123,
+                'user_name': user.name,
+                'user_last_name': user.last_name,
+                'street': user.street,
+                'city': user.city,
+                'country_code': user.country_code,
                 'sum_total': req.body.price,
                 'products': the_cart.products
             });
             new_purchase.save().then((result) => {
-                //console.log(result);
-            }).catch((err) => {
-                console.error(err);
-            });
+                console.log(result);
+            }).catch(err => res.status(400).json("Error: " + err));
             Cart.deleteOne({ cart_id: cart_id_value })
                 .then((result) => {
                     console.log(result)
-                }).catch((err) => {
-                    console.error(err)
-                });
+                }).catch(err => res.status(400).json("Error: " + err));
             //make request to the Products service and update the "available" attribute of them
             const sold_products = {
                 'sold': the_cart.products
@@ -137,16 +136,12 @@ app.post('/cart/purchase', (req, res) => {
             requestify.put(`${serverURL_products}/books`, sold_products)
                 .then(function (response) {
                     console.log(response);
-                }).catch((err)=>{
-                    console.error(err);
-                });
+                }).catch(err => res.status(400).json("Error: " + err));
             res.send();
             }
-        }).catch((err) => {
-            console.error(err);
-        });
+        }).catch(err => res.status(400).json("Error: " + err));
     } else {
-        res.send("No cart_id");
+        res.send("No cart_id or jid");
     }
 });
 
@@ -154,17 +149,13 @@ app.get('/carts',(req,res)=>{
     Cart.find()
     .then((result)=>{
         res.send(result);
-    }).catch((err)=>{
-        console.error(err);
-    })
+    }).catch(err => res.status(400).json("Error: " + err))
 });
 app.get('/purchases',(req,res)=>{
     Purchase.find()
     .then((result)=>{
         res.send(result);
-    }).catch((err)=>{
-        console.error(err);
-    })
+    }).catch(err => res.status(400).json("Error: " + err))
 });
 app.post('/cart', (req, res) => {
 
@@ -180,9 +171,7 @@ app.post('/cart', (req, res) => {
     //save the new cart
     new_cart.save().then((result) => {
         console.log(result);
-    }).catch((err) => {
-        console.error(err);
-    })
+    }).catch(err => res.status(400).json("Error: " + err))
     //send the cookie back
     res.status(200).send(randomNumber);
 });
@@ -220,9 +209,7 @@ app.put('/cart', (req, res) => {
                 .then((update) => {
                     console.log(update);
                     res.status(200).send("cookie was updated");
-                }).catch((err) => {
-                    console.log(err)
-                });
+                }).catch(err => res.status(400).json("Error: " + err));
         });
     }else{
         res.status(200).send("Tried to PUT but cookie_id is null");
@@ -243,20 +230,18 @@ function setCookie(name, value, days) {
     return name + "=" + value + ";Secure;SameSite=None;Path=/;Max-Age=" + 86400 * days;
 }
 
-function authenticateToken(req, res, next) {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (token == null) res.sendStatus(401);
-    else {
-        jwt.verify(token, jwtSecret, (err, user) => {
-            if (err) {
-                console.log(err);
-                res.sendStatus(403);
-            } else {
-                req.user = user;
-                next();
-            }
-        })
-    }
-}
+function authenticateToken(token) {
+    
+    const user = jwt.verify(token, refreshTokenSecret, (err, the_user) => {
+        if (err) {
+          console.log(err);
+         return 0;
+        } else { 
+          return the_user;
+         
+        }
+      });
+      console.log(user);
+      return user;
+    
+  }
