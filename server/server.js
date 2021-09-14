@@ -3,12 +3,14 @@ const mongoose = require('mongoose');
 const express = require('express');
 const requestify = require('requestify');
 const jwt = require('jsonwebtoken');
+const path = require('path');
 const refreshTokenSecret = 'enki-refresh-token';
 const PORT = process.env.PORT || 3000;
 const MongodbURI = "mongodb+srv://enki-admin-cart:enki1234@cluster0.5xz0p.mongodb.net/enki-carts?retryWrites=true&w=majority"
 const Cart = require('./models/cart_model.js');
 const Purchase = require('./models/purchase_model.js');
-
+const Log = require('./models/log_model.js');
+const logger = require('./logger');
 const serverURL_products = 'https://enki-product.herokuapp.com'
 
 const app = express();
@@ -25,7 +27,7 @@ app.use((req, res, next) => {
     ];
     if (corsWhitelist.indexOf(req.headers.origin) !== -1) {
         res.header('Access-Control-Allow-Origin', req.headers.origin);
-        console.log(req.headers.origin);
+        logger.info(`HTTP Request received from origin ${req.headers.origin}`);
     }
     // res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Credentials, Cookie, Set-Cookie');
@@ -37,21 +39,40 @@ app.use((req, res, next) => {
 });
 
 mongoose.connect(MongodbURI, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then((result) => app.listen(PORT, () => console.log(`Listening on port ${PORT}...`)))
-    .catch(err => res.status(400).json("Error: " + err));
+    .then((result) => app.listen(PORT, () => {
+        logger.info(`Listening on port ${PORT}...`);
+    }))
+    .catch(err => {
+        logger.error(err);
+        res.status(400).json("Error: " + err)
+    });
 
 app.get('/', (req, res) => {
     res.send("Welcome to Enki's Shopping Cart Service")
-})
-app.get('/carts/:id',(req,res)=>{
+});
+
+//-----------------------------CART-----------------------
+app.get('/carts', (req, res) => {
+    Cart.find()
+        .then((result) => {
+            logger.info('GET /carts', result)
+            res.send(result);
+        }).catch(err => {
+            res.status(400).json("Error: " + err);
+            logger.error(err);
+        })
+});
+app.get('/carts/:id', (req, res) => {
+    logger.info('GET /carts/:id', req.params.id);
     const cart_id_value = req.params.id;
     let the_books = [];
     if (cart_id_value != null) {
         //find the cart
         Cart.findOne({ cart_id: cart_id_value }).then((the_cart) => {
             //read the product-id's from the cart
-            if( the_cart.products.length == 0){
+            if (the_cart.products.length == 0) {
                 res.send("Cart is empty");
+                logger.info("The Cart is Empty", the_cart, the_cart, products);
             }
             the_cart.products.forEach(product => {
                 //get details about the product communicating with the products service
@@ -73,83 +94,28 @@ app.get('/carts/:id',(req,res)=>{
                         the_books.sort((a, b) => a.title.localeCompare(b.title));
                         const result = { 'books': the_books };
                         res.send(result);
+                        logger.info("Cart found, data sent", the_cart, result);
                     }
                 });
             })
-        }).catch(err => res.status(400).json("Error: " + err));
+        }).catch(err => {
+            res.status(400).json("Error: " + err);
+            logger.error("Error finding the Cart", err);
+        });
 
     } else {
+
         res.send("no cart_id was found");
+        logger.warn("Cart_id has value NULL", req.params.id);
     }
 });
 
-
-app.post('/cart/purchase', (req, res) => {
-   //1. Validate if there is a cookie
-   const cart_id_value = req.body.cart_id;
-   const refreshToken_value = req.body.jid;
-   console.log(cart_id_value);
-   console.log(refreshToken_value)
-
-    if (cart_id_value && refreshToken_value ) {
-
-        //get the cart
-        Cart.findOne({ cart_id: cart_id_value }).then((the_cart) => {
-            
-            if(the_cart == null){
-            res.send("Cart doesn't exist");
-            }else{
-              //TODO : GET info about the logged user.  
-            const user = authenticateToken(refreshToken_value);
-            const new_purchase = new Purchase({
-                'user_name': user.name,
-                'user_last_name': user.last_name,
-                'street': user.street,
-                'city': user.city,
-                'country_code': user.country_code,
-                'sum_total': req.body.price,
-                'products': the_cart.products
-            });
-            new_purchase.save().then((result) => {
-                console.log(result);
-            }).catch(err => res.status(400).json("Error: " + err));
-            Cart.deleteOne({ cart_id: cart_id_value })
-                .then((result) => {
-                    console.log(result)
-                }).catch(err => res.status(400).json("Error: " + err));
-            //make request to the Products service and update the "available" attribute of them
-            const sold_products = {
-                'sold': the_cart.products
-            }
-            requestify.put(`${serverURL_products}/books`, sold_products)
-                .then(function (response) {
-                    console.log(response);
-                }).catch(err => res.status(400).json("Error: " + err));
-            res.send();
-            }
-        }).catch(err => res.status(400).json("Error: " + err));
-    } else {
-        res.send("No cart_id or jid");
-    }
-});
-
-app.get('/carts',(req,res)=>{
-    Cart.find()
-    .then((result)=>{
-        res.send(result);
-    }).catch(err => res.status(400).json("Error: " + err))
-});
-app.get('/purchases',(req,res)=>{
-    Purchase.find()
-    .then((result)=>{
-        res.send(result);
-    }).catch(err => res.status(400).json("Error: " + err))
-});
 app.post('/cart', (req, res) => {
+    logger.info('POST cart', req.body);
 
     //create one with the chosen product
     let randomNumber = generateRandomID();
-    
+
     const new_cart = new Cart({
         'cart_id': randomNumber,
         'products': [
@@ -158,26 +124,30 @@ app.post('/cart', (req, res) => {
     });
     //save the new cart
     new_cart.save().then((result) => {
+        logger.info("New Cart was saved.", result);
         console.log(result);
-    }).catch(err => res.status(400).json("Error: " + err))
+    }).catch(err => {
+        res.status(400).json("Error: " + err);
+        logger.error("Error saving the New Cart", err);
+
+    })
     //send the cookie back
     res.status(200).send(randomNumber);
+    logger.info('New Cart ID was sent as response', randomNumber);
 });
 
-
-app.put('/cart', (req, res) => { 
+app.put('/cart', (req, res) => {
+    logger.info('PUT /cart', req.body)
     //1. Validate if there is a cookie
-    const cart_id_value = req.body.cart_id;
-
     //if there is already a created cart->update
-    if (cart_id_value != null) {
+    if (req.body.cart_id && req.body.bookId && req.body.quantity) {
+        const cart_id_value = req.body.cart_id;
         let the_new_data = [req.body.bookId, req.body.quantity];
         //find the product in the cart and update it
         Cart.findOne({ cart_id: cart_id_value }).then((the_cart) => {
-
-            //search if this product is in the cart already
-            console.log(the_cart)
+        
             const foundIndex = the_cart.products.findIndex(element => element[0] == the_new_data[0]);
+            //search if this product is in the cart already
             if (foundIndex > -1) {
                 //check if this product should be deleted from the cart
                 if (the_new_data[1] == '0') {
@@ -187,22 +157,104 @@ app.put('/cart', (req, res) => {
                     //update the product
                     the_cart.products[foundIndex] = the_new_data;
                 }
-           
             } else {
                 //if this product is not already in the cart, add it to it
                 the_cart.products.push(the_new_data);
-
             }
-            Cart.findOneAndUpdate({ cart_id: cart_id_value}, { products: the_cart.products }, { returnOriginal: false })
+            Cart.findOneAndUpdate({ cart_id: cart_id_value }, { products: the_cart.products }, { returnOriginal: false })
                 .then((update) => {
-                    console.log(update);
-                    res.status(200).send("cookie was updated");
-                }).catch(err => res.status(400).json("Error: " + err));
-        });
-    }else{
-        res.status(200).send("Tried to PUT but cookie_id is null");
+                    res.status(200).send("Cookie has been updated");
+                    logger.info("Cookie has been updated.", update);
+                }).catch(err => {
+                    res.status(400).json("Error: " + err);
+                    logger.error('Error updating the Cart.', err);
+                });
+        }).catch(err => {
+            res.status(400).json("Error: " + err);
+            logger.error('Error finding the Cart', err);
+        });;
+    } else {
+        res.status(200).send("Tried to update Cart, but the Cart_ID, Book_ID, or Quantity was NULL.");
+        logger.warn("Tried to update Cart, but the Cart_ID, Book_ID, or Quantity was NULL.", req.body.cart_id)
     }
 });
+
+//-----------------------------PURCHASE-----------------------
+app.get('/purchases', (req, res) => {
+    Purchase.find()
+        .then((result) => {
+            res.send(result);
+            logger.info('GET /purchases', result);
+        }).catch(err => {
+            res.status(400).json("Error: " + err);
+            logger.error('Error finding purchases', err);
+        })
+});
+
+app.post('/cart/purchase', (req, res) => {
+
+    logger.info('POST /cart/purhcase', req.body);
+    const cart_id_value = req.body.cart_id;
+    const refreshToken_value = req.body.jid;
+    //1. Validate if there is a cookie
+    if (cart_id_value && refreshToken_value) {
+
+        //get the cart
+        Cart.findOne({ cart_id: cart_id_value }).then((the_cart) => {
+
+            if (the_cart == null) {
+                res.send("Cart doesn't exist");
+                logger.warn("Tried to create a Purchase, but the Cart_id was NULL", req.body.cart_id)
+            } else {
+                //retrieve info about the logged user.  
+                const user = authenticateToken(refreshToken_value);
+                const new_purchase = new Purchase({
+                    'user_name': user.name,
+                    'user_last_name': user.last_name,
+                    'street': user.street,
+                    'city': user.city,
+                    'country_code': user.country_code,
+                    'sum_total': req.body.price,
+                    'products': the_cart.products
+                });
+                new_purchase.save().then((result) => {
+                    logger.info("New Purchase has been created", result);
+                }).catch(err => {
+                    res.status(400).json("Error: " + err);
+                    logger.error("Error saving the new Purchase", err);
+                });
+                Cart.deleteOne({ cart_id: cart_id_value })
+                    .then((result) => {
+                        logger.info("The Cart has been deleted", cart_id_value);
+                    }).catch(err => {
+                        res.status(400).json("Error: " + err);
+                        logger.error("Error tring to delete the Cart", err);
+                    });
+                //make request to the Products service and update the "available" attribute of them
+                const sold_products = {
+                    'sold': the_cart.products
+                }
+                requestify.put(`${serverURL_products}/books`, sold_products)
+                    .then(function (response) {
+                        logger.info("Books Service PUT", response, sold_products);
+                    }).catch(err => {
+                        res.status(400).json("Error: " + err);
+                        logger.error("Error updating the books from Books Service", err);
+                    });
+                res.send();
+            }
+        }).catch(err => {
+            res.status(400).json("Error: " + err);
+            logger.error("Error finding the cart", err)
+        });
+    } else {
+        res.send("No cart_id or jid");
+        logger.warn("No Cart_ID or JID was found", req.body);
+    }
+});
+
+
+
 
 
 //OTHER functions
@@ -219,17 +271,28 @@ function setCookie(name, value, days) {
 }
 
 function authenticateToken(token) {
-    
+
     const user = jwt.verify(token, refreshTokenSecret, (err, the_user) => {
         if (err) {
-          console.log(err);
-         return 0;
-        } else { 
-          return the_user;
-         
+            console.log(err);
+            return 0;
+        } else {
+            return the_user;
+
         }
-      });
-      console.log(user);
-      return user;
-    
-  }
+    });
+    return user;
+
+}
+
+//----------------------LOGS-------------------
+app.get('/logs', (req, res) => {
+    Log.find()
+    .then((result) => {
+        res.send(result);
+    }).catch(err => {
+        res.status(400).json("Error: " + err);
+        logger.error(err);
+    })
+    // res.sendFile(path.join(__dirname, '../logs', '/shoppingcart-logs.log'));
+})

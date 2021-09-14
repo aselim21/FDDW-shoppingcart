@@ -7,7 +7,9 @@
     "express": "^4.17.1",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^6.0.5",
-    "requestify": "^0.2.5"
+    "requestify": "^0.2.5",
+    "winston": "^3.3.3",
+    "winston-mongodb": "^5.0.7"
   },
   "devDependencies": {},
   "scripts": {
