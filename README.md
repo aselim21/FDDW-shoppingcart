@@ -9,7 +9,7 @@ Web Service, written in Node.js for creating shopping carts, updating the produc
 Main Ressources: Cart, Purchase
 
 ### Build
-The actual version is 1.0.0 and is dependent from the following APIs - "express": "^4.17.1", "jsonwebtoken": "^8.5.1", "mongoose": "^6.0.5", "requestify": "^0.2.5".
+The actual version is 1.0.0 and is dependent from the following packages - "express": "^4.17.1", "jsonwebtoken": "^8.5.1", "mongoose": "^6.0.5", "requestify": "^0.2.5", "winston": "^3.3.3", "winston-mongodb": "^5.0.7".
 
 ### Deployed in Heroku
 

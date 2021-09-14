@@ -48,15 +48,6 @@ function buildProdLogger() {
         logFormat
       )
     }),
-    new transports.File({
-      filename: 'logs/shoppingcart-logs.log',
-      format: format.combine(
-        // Render in one line in your log file.
-        // If you use prettyPrint() here it will be really
-        // difficult to exploit your logs files afterwards.
-        format.json()
-      )
-    }),
     new transports.MongoDB({
         db : 'mongodb+srv://enki-admin-cart:enki1234@cluster0.5xz0p.mongodb.net/enki-carts?retryWrites=true&w=majority',
         useUnifiedTopology: true ,
