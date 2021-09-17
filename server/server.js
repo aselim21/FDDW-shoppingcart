@@ -1,10 +1,6 @@
-//MONGOOSE
 const mongoose = require('mongoose');
 const express = require('express');
 const requestify = require('requestify');
-const jwt = require('jsonwebtoken');
-const path = require('path');
-const refreshTokenSecret = 'enki-refresh-token';
 const PORT = process.env.PORT || 3000;
 const MongodbURI = "mongodb+srv://enki-admin-cart:enki1234@cluster0.5xz0p.mongodb.net/enki-carts?retryWrites=true&w=majority"
 const Cart = require('./models/cart_model.js');
@@ -12,9 +8,12 @@ const Purchase = require('./models/purchase_model.js');
 const Log = require('./models/log_model.js');
 const logger = require('./logger');
 const serverURL_products = 'https://enki-product.herokuapp.com'
+const serverURL_users = 'https://enki-user-service.herokuapp.com'
 
 const app = express();
 app.use(express.json());
+
+//set headers
 app.use((req, res, next) => {
     const corsWhitelist = [
         'http://127.0.0.1:5500',
@@ -29,15 +28,14 @@ app.use((req, res, next) => {
         res.header('Access-Control-Allow-Origin', req.headers.origin);
         logger.info(`HTTP Request received from origin ${req.headers.origin}`);
     }
-    // res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Credentials, Cookie, Set-Cookie');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Credentials, Cookie, Set-Cookie, Authorization');
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Expose-Headers', 'Set-Cookie');
     res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE, OPTIONS, HEAD');
-    //res.header('Access-Control-Request-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Credentials ');
     next();
 });
 
+//connect with DB and start the server
 mongoose.connect(MongodbURI, { useNewUrlParser: true, useUnifiedTopology: true })
     .then((result) => app.listen(PORT, () => {
         logger.info(`Listening on port ${PORT}...`);
@@ -47,11 +45,13 @@ mongoose.connect(MongodbURI, { useNewUrlParser: true, useUnifiedTopology: true }
         res.status(400).json("Error: " + err)
     });
 
+//-----------------------------CART-----------------------
+
 app.get('/', (req, res) => {
     res.send("Welcome to Enki's Shopping Cart Service")
 });
 
-//-----------------------------CART-----------------------
+//get all carts
 app.get('/carts', (req, res) => {
     Cart.find()
         .then((result) => {
@@ -62,6 +62,9 @@ app.get('/carts', (req, res) => {
             logger.error(err);
         })
 });
+
+//get a specific cart with additional information about the products : 
+//get the cart -> send GET request to Products Service for each product from the list -> gather the information and send it back 
 app.get('/carts/:id', (req, res) => {
     logger.info('GET /carts/:id', req.params.id);
     const cart_id_value = req.params.id;
@@ -100,7 +103,7 @@ app.get('/carts/:id', (req, res) => {
             })
         }).catch(err => {
             res.status(400).json("Error: " + err);
-            logger.error("Error finding the Cart", err);
+            logger.error(`Error finding the Cart with ID ${req.params.id}.`, err);
         });
 
     } else {
@@ -110,10 +113,11 @@ app.get('/carts/:id', (req, res) => {
     }
 });
 
+//create a new cart with the sent product and quantity
 app.post('/cart', (req, res) => {
-    logger.info('POST cart', req.body);
 
-    //create one with the chosen product
+    logger.info('POST cart', req.body);
+    //create a random cartID
     let randomNumber = generateRandomID();
 
     const new_cart = new Cart({
@@ -131,21 +135,22 @@ app.post('/cart', (req, res) => {
         logger.error("Error saving the New Cart", err);
 
     })
-    //send the cookie back
+    //send the cart ID back
     res.status(200).send(randomNumber);
     logger.info('New Cart ID was sent as response', randomNumber);
 });
 
+//update an existing cart : add a product+quantity, update the quantity of the product or delete a product+quantity 
 app.put('/cart', (req, res) => {
     logger.info('PUT /cart', req.body)
-    //1. Validate if there is a cookie
+
     //if there is already a created cart->update
     if (req.body.cart_id && req.body.bookId && req.body.quantity) {
         const cart_id_value = req.body.cart_id;
         let the_new_data = [req.body.bookId, req.body.quantity];
         //find the product in the cart and update it
         Cart.findOne({ cart_id: cart_id_value }).then((the_cart) => {
-        
+
             const foundIndex = the_cart.products.findIndex(element => element[0] == the_new_data[0]);
             //search if this product is in the cart already
             if (foundIndex > -1) {
@@ -180,6 +185,7 @@ app.put('/cart', (req, res) => {
 });
 
 //-----------------------------PURCHASE-----------------------
+//get all purchases
 app.get('/purchases', (req, res) => {
     Purchase.find()
         .then((result) => {
@@ -191,13 +197,16 @@ app.get('/purchases', (req, res) => {
         })
 });
 
-app.post('/cart/purchase', (req, res) => {
+//create a purchase: 
+//send post request to User service to validate the user and get User details -> create a purchase -> delete the cart of the purchase -> send PUT requests to Products service 
+//to update the "available" parameter of each product.
+app.post('/cart/purchase', checkLogin, (req, res) => {
 
     logger.info('POST /cart/purhcase', req.body);
     const cart_id_value = req.body.cart_id;
-    const refreshToken_value = req.body.jid;
+    // const login_token = req.body.login_token;
     //1. Validate if there is a cookie
-    if (cart_id_value && refreshToken_value) {
+    if (cart_id_value) {
 
         //get the cart
         Cart.findOne({ cart_id: cart_id_value }).then((the_cart) => {
@@ -206,14 +215,13 @@ app.post('/cart/purchase', (req, res) => {
                 res.send("Cart doesn't exist");
                 logger.warn("Tried to create a Purchase, but the Cart_id was NULL", req.body.cart_id)
             } else {
-                //retrieve info about the logged user.  
-                const user = authenticateToken(refreshToken_value);
+
                 const new_purchase = new Purchase({
-                    'user_name': user.name,
-                    'user_last_name': user.last_name,
-                    'street': user.street,
-                    'city': user.city,
-                    'country_code': user.country_code,
+                    'user_name': req.user.name,
+                    'user_last_name': req.user.last_name,
+                    'street': req.user.street,
+                    'city': req.user.city,
+                    'country_code': req.user.country_code,
                     'sum_total': req.body.price,
                     'products': the_cart.products
                 });
@@ -266,33 +274,37 @@ function generateRandomID() {
 
 }
 
-function setCookie(name, value, days) {
-    return name + "=" + value + ";Secure;SameSite=None;Path=/;Max-Age=" + 86400 * days;
-}
+function checkLogin(req, res, next) {
+    //const data = { login_token: req.body.login_token };
 
-function authenticateToken(token) {
-
-    const user = jwt.verify(token, refreshTokenSecret, (err, the_user) => {
-        if (err) {
-            console.log(err);
-            return 0;
-        } else {
-            return the_user;
-
+    requestify.request(`${serverURL_users}/checkLogin`, {
+        method: 'POST',
+        headers: {
+            'Authorization': req.body.login_token
+        }		
+    }).then((response) => {
+        if (response.body.checkLogin == true) {
+            req.the_user = response.body.user;
+            logger.info('Books Service PUT /checkLogin successfull', response.body.user);
+            next();
+        }else {
+            logger.warn("Unauthorized user trying to purchase", response);
+            res.status(401).send();
         }
+    }).catch((err) => {
+        logger.error(err);
     });
-    return user;
-
 }
+
 
 //----------------------LOGS-------------------
+//get all logs of the service
 app.get('/logs', (req, res) => {
     Log.find()
-    .then((result) => {
-        res.send(result);
-    }).catch(err => {
-        res.status(400).json("Error: " + err);
-        logger.error(err);
-    })
-    // res.sendFile(path.join(__dirname, '../logs', '/shoppingcart-logs.log'));
+        .then((result) => {
+            res.send(result);
+        }).catch(err => {
+            res.status(400).json("Error: " + err);
+            logger.error(err);
+        })
 })
