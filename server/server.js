@@ -281,18 +281,22 @@ function checkLogin(req, res, next) {
         method: 'POST',
         headers: {
             'Authorization': req.body.login_token
-        }		
+        }
     }).then((response) => {
-        if (response.body.checkLogin == true) {
-            req.the_user = response.body.user;
-            logger.info('Books Service PUT /checkLogin successfull', response.body.user);
+        const responseBody = JSON.parse(response.body);
+        if (responseBody.checkLogin == true) {
+            req.user = responseBody.user;
+            logger.info('Books Service PUT /checkLogin successfull', responseBody);
             next();
-        }else {
-            logger.warn("Unauthorized user trying to purchase", response);
-            res.status(401).send();
         }
     }).catch((err) => {
-        logger.error(err);
+        if (err.code == 403) {
+            logger.warn("Unauthorized user trying to purchase");
+            res.status(403).send("Unauthorized user trying to purchase");
+        } else {
+            logger.error(err);
+            res.status(500).send();
+        }
     });
 }
 
