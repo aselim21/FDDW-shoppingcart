@@ -204,9 +204,8 @@ app.post('/cart/purchase', checkLogin, (req, res) => {
 
     logger.info('POST /cart/purhcase', req.body);
     const cart_id_value = req.body.cart_id;
-    // const login_token = req.body.login_token;
     //1. Validate if there is a cookie
-    if (cart_id_value) {
+    if (cart_id_value && req.user) {
 
         //get the cart
         Cart.findOne({ cart_id: cart_id_value }).then((the_cart) => {
@@ -256,7 +255,7 @@ app.post('/cart/purchase', checkLogin, (req, res) => {
             logger.error("Error finding the cart", err)
         });
     } else {
-        res.send("No cart_id or jid");
+        res.status(401).send("Unauthorized request");
         logger.warn("No Cart_ID or JID was found", req.body);
     }
 });
